@@ -1,0 +1,44 @@
+{
+  "checked_at_utc": "2026-10-24T15:58:11.968052+00:00",
+  "checks": [
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "returncode": 0,
+      "output": ".............                                                            [100%]\n=============================== warnings summary ===============================\ntests/test_preparation.py::test_single_step_native_extraction_and_mapped_duplicate\n  /Users/almazgil/Developer/projects/retrocomposite/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n13 passed, 1 warning in 7.96s\n"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "returncode": 0,
+      "output": "No broken requirements found.\n"
+    },
+    {
+      "command": [
+        ".venv/bin/retrocomposite",
+        "--help"
+      ],
+      "returncode": 0,
+      "output": "usage: retrocomposite [-h]\n                      {single-step,stock,composite-library,composite-json,validate}\n                      ...\n\nCommand-line entry points; full experiments are deliberately separate.\n\npositional arguments:\n  {single-step,stock,composite-library,composite-json,validate}\n\noptions:\n  -h, --help            show this help message and exit\n"
+    },
+    {
+      "command": [
+        ".venv/bin/synplan",
+        "ranking_policy_training",
+        "--help"
+      ],
+      "returncode": 0,
+      "output": "Usage: synplan ranking_policy_training [OPTIONS]\n\n  Ranking policy network training.\n\nOptions:\n  --config PATH                   Path to the configuration file for ranking\n                                  policy training.  [required]\n  --policy_data PATH              Path to the policy training mapping file\n                                  (*_policy_data.tsv) generated during rule\n                                  extraction.  [required]\n  --results_dir PATH              Path to the directory where the trained\n                                  policy network will be stored.\n  --workers INTEGER               CPU workers for dataset preprocessing (0 =\n                                  auto-detect).\n  --no-cache                      Disable dataset caching (always reprocess\n                                  from scratch).\n  --logger [csv|tensorboard|mlflow|wandb|litlogger]\n                                  Enable a training logger: csv, tensorboard,\n                                  mlflow, wandb, or litlogger.\n  --help                          Show this message and exit.\n"
+    }
+  ]
+}
