@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-25",
+  "scope": "Invented chemistry and native API integration; no production training or PaRoutes evaluation",
+  "pytest": {
+    "passed": 43,
+    "warnings": 1,
+    "warning": "Upstream torch.jit.script deprecation",
+    "seconds": 78.98
+  },
+  "ruff": "17 Python files pass lint and formatting",
+  "documentation_links_checked": 69,
+  "training_check": {
+    "accelerator": "cpu",
+    "epochs": 2,
+    "rules": 2,
+    "examples": 12,
+    "split_seed": 42,
+    "model_seeds": [
+      17,
+      17,
+      18
+    ],
+    "same_seed": "Identical model tensors and validation loss",
+    "different_seed": "Different model tensors",
+    "native_checkpoint_reload": "passed",
+    "failed_run_audit": "passed"
+  },
+  "limits": [
+    "Production assets and split-coverage review pending",
+    "CUDA/MPS determinism not tested",
+    "Optimizer/trainer resume not implemented"
+  ],
+  "implementation_sha256": {
+    "src/retrocomposite/splitting.py": "d28dd250d6b2f7c83d4091b802d71338a54cc7d84ee6ec52ac9c94462a8dd880",
+    "src/retrocomposite/training.py": "8de2bff1ac684732369d177f7e68af18c15fe71727510d52c11015f152eac113",
+    "src/retrocomposite/cli.py": "9996fba806cdb84726632a2e7d1f886a0a9752d557f6231ad94153778cd2716c",
+    "tests/test_training.py": "e8aac4b032a49593a126550fc6c12607dc9def84cdf5333f8ec3500da3dd2299"
+  }
+}

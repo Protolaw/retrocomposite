@@ -2,6 +2,11 @@
 
 Updated: 2026-10-25. This file records scientific decisions and architecture;
 execution status belongs in TODO.md and unresolved choices in QUESTIONS.md.
+Workflow diagrams: [preparation](docs/diagrams/preparation.md),
+[training](docs/diagrams/training.md), [planning](docs/diagrams/planning.md),
+[post-processing](docs/diagrams/postprocessing.md), and
+[analysis](docs/diagrams/analysis.md). Preparation has two diagrams in the
+same file: shared data preparation, then composite cohort filtering.
 
 ## Objective and interpretation
 
@@ -15,6 +20,11 @@ planning. We train our own model and do not use pretrained presets. The main
 claim is therefore a controlled comparison of planning action spaces under
 shared chemical exposure, not unseen-target generalization or a standard
 held-out PaRoutes benchmark result.
+
+The composite vocabulary is restricted to linear tactics shared by n1 and n5.
+Use n5 to establish tactic overlap and evaluate planning; composite training
+examples and decomposition alternatives come from eligible n1 occurrences only,
+including internal motif targets. This is a shared-tactic planning comparison.
 
 Composite supervision comes from n1 only. Audit its overlap with n5 separately:
 the single-step exposure is deliberate, but duplicate-route exposure in the
@@ -35,13 +45,35 @@ policy instead of describing the entire experiment as leakage-free.
   encoder, and the supported GPS rule graph encoder.
 - Adapt certified RouteInspector composites and associated motif products to
   the same SynPlanner training format, preserving executable variants.
-- Linear consecutive `RRseq_cons` tactics only. Gapped and branched tactics are
-  outside this first experiment.
-- Derive stock from actual terminal molecule nodes in cleaned n1/n5 JSON.
+- Linear consecutive `RRseq_cons` tactics shared by n1 and n5 only. Gapped and
+  branched tactics are outside this first experiment.
+- Train on eligible n1 motif targets, including internal molecules as well as
+  route roots, after the three primary exclusions E1-E3 below.
+- Exclude shared final-target routes, shared n5 motif inputs, and exact concrete
+  multistep-segment overlap from all composite-derived assets.
+- Run patent-disjointness as an additional sensitivity analysis.
+- Use the union of actual terminal molecule nodes in cleaned n1+n5 JSON as
+  the stock for both planning arms.
   Do not use the original PaRoutes stock files or blindly trust `in_stock` flags.
 - Ignore stereochemistry in exported model inputs, reactions, targets, stock,
   and planning evaluation; keep original sources unchanged.
 - Implement the future hybrid policy on a separate SynPlanner branch.
+
+## Artifact organization
+
+Store artifacts prepared before training in [data/](data/README.md): single-step
+rules and examples, stock and targets, eligible composite cohorts with their
+exclusion/support manifests, and frozen validation assignments. Upstream
+RouteInspector publications remain in their existing locations and are referenced
+by path and hash; library refresh remains upstream.
+
+Store generated results in [outputs/](outputs/README.md), separated by stage:
+`training/` for checkpoints, metrics, and calibration; `planning/` for MCTS
+candidates and search costs; `postprocessing/` for replay, validation, and
+deduplicated explicit routes; `analysis/` for comparisons, tables, figures, and
+reports. Preserve run/cohort/seed identities and input hashes between stages.
+Preparation audits belong with their input cohorts in `data/`; evaluation
+audits belong with the relevant result stage in `outputs/`.
 
 ## Data release and provenance
 
@@ -60,9 +92,9 @@ software versions, and output hashes. Preserve dataset, route, reaction-node
 path, original reaction ID, reference occurrence, composite family, exact
 variant, and decomposition provenance where applicable.
 
-Decouple overlap assessment from merged-dataset publication. Reuse or extract
-the merger's route-identity comparison into a read-only audit interface in
-RouteInspector, then consume its membership/exclusion manifests here. Preserve
+Cohort selection now runs through Retrocomposite's read-only audit interface,
+independently of merged-dataset publication. It uses RouteInspector's native
+tactic equivalence and exact labelled-graph comparison APIs. Preserve
 the original n1/n5 IDs and membership; merging and renumbering routes must not
 be a prerequisite for a train/test decision. The present merger buckets targets
 with stereochemistry retained, while this experiment ignores it. Therefore
@@ -75,6 +107,89 @@ identities across n1+n5 while retaining all source memberships in a sidecar.
 This avoids overweighting shared routes merely because they occur in both
 files. Record this policy explicitly; occurrence-weighted training is a future
 ablation. Retained molecular inputs are canonical, unmapped, and stereo-free.
+
+## Shared-tactic selection
+
+Compute the intersection of n1 and n5 linear tactic identities from the matching
+refreshed publications, recording identity definitions, versions, source hashes,
+and both dataset memberships. Match stable tactic identities, not dataset-local
+entry IDs or raw SMARTS spelling. Apply the agreed n1 occurrence exclusions, then
+retain only shared tactics with eligible certified n1 supervision. Record tactics
+lost through exclusions and the resulting n5 coverage.
+
+Select each retained tactic's executable variants, products, and decomposition
+alternatives from eligible n1 occurrences only. Include all eligible motif-start
+molecules, whether root or internal; never add n5 product/rule training pairs or
+n5-only decomposition alternatives. Apply the confirmed primary exclusions below
+before materializing training data and executable support.
+
+## Primary occurrence exclusions
+
+The following three rules are confirmed for composite training. Freeze the
+reference sets from the cleaned n5 evaluation corpus before training; include
+all its reference routes, not only routes containing retained shared tactics.
+
+| Rule | Comparison | Exclusion scope |
+| --- | --- | --- |
+| E1: shared final target | An n1 route's final target equals any n5 final target. This includes exact duplicate routes. | Remove every composite occurrence from that n1 route. |
+| E2: shared motif input | An n1 occurrence's motif target equals any n5 root or internal nonterminal molecule, even when its composite label differs. | Remove the occurrence. |
+| E3: shared concrete multistep segment | An n1 occurrence contains a concrete consecutive segment of two or more reactions also present in n5, including a segment embedded within a longer composite. | Remove the occurrence and its decomposition evidence. |
+
+Use canonical stereo-free molecular identities independent of atom-map numbers,
+while retaining charge and isotope distinctions. Define nonterminal molecules
+by the reference route structure, irrespective of stock membership. E3 compares
+ordered concrete transformations, intermediate molecules, and participating
+reactant/branch context under consistent atom correspondence. It must not equate
+segments solely because their abstract rule sequence or tactic identity matches.
+The implemented comparison is versioned as
+`full-mapped-reaction-pair-with-all-intermediate-alignments/1`. It checks every
+adjacent pair: any exact repeated consecutive segment of length at least two
+contains such a pair. The two-step graph preserves both full reaction sides,
+component membership, intra-reaction atom correspondence, and inter-step
+continuity under all exact intermediate alignments. Reagents in the middle
+SMILES field are excluded; participating reactants are retained.
+
+Alignment enumeration defaults to a maximum of 256. Exceeding it quarantines
+the affected comparison; it never becomes a negative match. A malformed n5
+reference that prevents indexing blocks publication of usable primary assets.
+See [selection commands and audit contracts](docs/SELECTION.md).
+
+Apply the union of E1, E2, and E3. Keep all matching reason codes per occurrence,
+with source IDs and matching n5 evidence; report individual and overlapping
+exclusion counts without double-counting total removals. Unresolved comparison
+failures must be quarantined and reported rather than treated as eligible.
+
+Filter before grouping or aggregating composite examples. Rebuild training and
+validation pairs, occurrence counts, executable-variant support, decomposition
+alternatives, and frequency-based priors from retained n1 evidence only. A
+variant may remain when independently supported by surviving n1 occurrences.
+Drop shared tactics with no eligible n1 support and report the lost vocabulary
+and n5 coverage. Do not restore them using n5 evidence.
+
+These rules do not filter the deliberately exposed n1+n5 single-step corpus or
+the union leaf stock. Shared abstract tactics and elementary chemistry remain
+allowed. This protocol supports a shared-tactic comparison without direct n5
+reference-route composite supervision; it does not establish unseen-chemistry
+generalization. Audit overlap with additional MCTS-generated molecules after
+search, without changing the frozen training split retrospectively.
+
+## Patent-disjoint sensitivity analysis
+
+In addition to E1-E3, exclude every n1 route sharing an authoritative patent ID
+with any n5 route. Recompute all composite assets and train a separate composite
+model from the surviving cohort. Keep the single-step checkpoint, n5 evaluation
+targets, union stock, and matched search settings fixed. Apply the same validation
+and tuning procedure using only the eligible development data for each cohort.
+
+The implemented patent policy uses original PaRoutes reaction IDs, including
+preprocessing split ancestry; it uppercases IDs and removes whitespace, slashes,
+and hyphens while retaining publication kind codes. This is publication-ID
+disjointness, not patent-family disjointness. Record its coverage. Quarantine
+n1 routes with unresolved patent provenance; any unresolved n5 patent provenance
+blocks usable sensitivity assets, because the common n5 evaluation set remains
+fixed. Unknown IDs are not evidence of disjointness. Report the reduction in examples, tactics, and
+variants alongside outcomes so repertoire loss is visible. Patent-disjointness
+is an additional sensitivity analysis, not a replacement for the primary cohort.
 
 ## Training artifacts
 
@@ -101,11 +216,26 @@ training rows. Exact duplicate product/rule pairs may be deduplicated while
 retaining all occurrences in provenance. Unobserved rule applicability is not
 claimed to have been exhaustively labelled.
 
-The standard SynPlanner CLI currently makes its own ranking train/validation
-split. CLI-compatible files do not by themselves implement route/patent-grouped
-validation. A reproducible grouped split/training wrapper remains a task before
-reportable composite-model evaluation. Keep n5 composite supervision out of
-that model's training and tuning.
+The standard SynPlanner CLI makes its own ranking train/validation split.
+Retrocomposite now supplies `split` and `train` commands that bypass that split
+using frozen row assignments. Default grouping joins identical stereo-free inputs
+and every supporting source route into connected components. Optional patent
+grouping adds shared patent IDs and requires complete patent provenance. Whole
+groups are assigned reproducibly while retaining training support for every rule;
+reports expose achieved holdout fraction, rule coverage, and any blocked split.
+The configurable defaults are a 10% requested holdout and split seed 42. Freeze
+production settings after reviewing actual component sizes; no grouping is
+silently relaxed.
+
+Split snapshots and assignments live under `data/splits/`. Model seeds are
+separate from split seeds. Each training run uses a fresh seeded interpreter,
+explicit data-loader subsets, deterministic settings, and a new directory under
+`outputs/training/`. Record native best/final checkpoints, logs, metrics,
+configuration and source hashes; verify the best checkpoint through SynPlanner's
+inference loader. CPU reproducibility checks use invented chemistry; accelerator
+verification and full production training remain pending. Keep n5 composite
+supervision out of training, validation, and calibration. See
+[training commands and contracts](docs/TRAINING.md).
 
 ## Architecture inspected in the local repositories
 
@@ -118,7 +248,7 @@ implementing these adapters; paths identify the current local checkouts.
 | Route merge uses a stereo-sensitive target bucket and exact ordered RouteCGR history, with intermediate states retained. | [merge.py](/Users/almazgil/Developer/projects/route-inspector/route_inspector/datasets/merge.py:25) | Separate audit from publication and add the experiment's stereo-free exclusion policy. |
 | Composite libraries bind to a reference library and resolve an exact certified variant for each link. | [library.py](/Users/almazgil/Developer/projects/route-inspector/route_inspector/composite_rules/library.py:721), [certified_rule](/Users/almazgil/Developer/projects/route-inspector/route_inspector/composite_rules/library.py:815) | Verify matching publications and export the linked variant, preserving decomposition and provenance. |
 | Reference occurrences record the molecule where the motif starts. | [models.py](/Users/almazgil/Developer/projects/route-inspector/route_inspector/reference_library/models.py:211) | Train on `motif_target_smiles`, including internal contexts. |
-| Ranking data reads `product_smiles`/`rule_id`; its default split forces repeated products into training and stratifies remaining examples by rule. | [preprocessing.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/ml/training/preprocessing.py:154), [supervised.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/ml/training/supervised.py:43) | Native TSV compatibility is implemented; grouped experimental validation still needs a wrapper. |
+| Ranking data reads `product_smiles`/`rule_id`; its default split forces repeated products into training and stratifies remaining examples by rule. | [preprocessing.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/ml/training/preprocessing.py:154), [supervised.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/ml/training/supervised.py:43) | Retrocomposite freezes grouped assignments and bypasses the native split while using the native dataset/model/checkpoint interfaces. |
 | The molecule encoder defaults to GCN unless explicitly configured. | [config.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/ml/config.py:60) | Set GPS explicitly for the molecule and QueryCGR rule graph encoders. |
 | Existing `CompositePolicy` merges filtering/ranking logits over one rule vocabulary; priority rules are additive with prior 1.0. | [composite.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/mcts/policy/composite.py:17), [tree.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/mcts/tree.py:541) | Implement the separate-vocabulary hybrid on the future SynPlanner branch, with one shared quota. |
 | Policy molecules remove stereo; small non-stock molecules can be assumed trivial at positive `min_mol_size`. | [precursor.py](/Users/almazgil/Developer/projects/SynPlanner/synplan/chem/precursor.py:64), [termination](/Users/almazgil/Developer/projects/SynPlanner/synplan/chem/precursor.py:101) | Use stereo-free identities consistently and set `min_mol_size=0`. |
@@ -134,22 +264,25 @@ The latter uses test-route information to select the vocabulary, even though
 the composite weights are trained only on n1. Both are useful, but they support
 different claims. Given the deliberately exposed single-step baseline, call
 this study a controlled planning comparison and state which composite-vocabulary
-selection rule was used. Do not silently decide this outstanding choice.
+selection rule was used. Confirmed choice: T1∩T5, retaining only tactics with
+eligible certified n1 supervision after exclusions.
 
 **Internal motif targets.** In retrosynthetic direction, suppose a route is
 `T -> A -> B -> C`. A composite replacing `A -> B -> C` should be recommended
 when the current molecule is A. Its training input is A, although T is the
 overall route target. Using only T would train root-starting tactics and omit
-internal tactics needed later during MCTS. Recommended default: use all eligible
-n1 motif targets, with provenance and grouped validation.
+internal tactics needed later during MCTS. Confirmed choice: use all eligible
+n1 motif targets, including internal molecules, with provenance and grouped
+validation.
 
 ## Stock and terminal states
 
 Export `n1.smi`, `n5.smi`, and `union.smi` from terminal molecule nodes, plus
 targets and leaf provenance. Canonicalize and remove stereo consistently.
-These plain SMILES files are readable by SynPlanner's stock loader. Choose one
-stock scope for the paired comparison; the n1+n5 union is the initial proposal,
-not a settled scientific decision.
+These plain SMILES files are readable by SynPlanner's stock loader. Use
+`union.smi`, the deduplicated stereo-free union of cleaned n1+n5 leaves, as the
+stock in both planning arms. The per-set files remain provenance outputs; a
+separate-stock sensitivity analysis is optional and outside the primary protocol.
 
 Use `min_mol_size=0` so a small non-stock fragment cannot count as a building
 block. Report already-in-stock targets separately. Recheck stock after
@@ -210,11 +343,14 @@ cohorts should both be reported under the selected vocabulary protocol.
 ## Phases
 
 1. Project/environment and tested preparation adapters.
-2. Consume refreshed n1/n5 publications, freeze release and overlap decisions.
+2. Consume refreshed n1/n5 publications, freeze their identities, and run the
+   implemented E1-E3 selector plus the patent-disjoint sensitivity cohort.
 3. Prepare single-step rules, composite supervision, and stock; validate assets.
-4. Train and validate custom MHN models; freeze models and calibration.
+4. Train and validate the shared single-step MHN and separate primary/sensitivity
+   composite MHNs; freeze models and calibration.
 5. Implement and test the hybrid on the separate SynPlanner branch.
-6. Pilot on development data, freeze budgets, then evaluate paired n5 runs.
+6. Pilot on development data, freeze budgets, then evaluate paired n5 runs for
+   the primary and patent-disjoint composite models.
 7. Unwrap, validate, deduplicate, measure cost/diversity, and publish the audit.
 
 No production library construction, model training, or planning is implied by

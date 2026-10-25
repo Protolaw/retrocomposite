@@ -1,0 +1,61 @@
+{
+  "checked_at_utc": "2026-10-24T16:37:37.876823+00:00",
+  "checks": [
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "returncode": 0,
+      "output": "................................                                         [100%]\n=============================== warnings summary ===============================\ntests/test_preparation.py::test_single_step_native_extraction_and_mapped_duplicate\n  /Users/almazgil/Developer/projects/retrocomposite/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n32 passed, 1 warning in 8.54s\n"
+    },
+    {
+      "command": [
+        ".venv/bin/retrocomposite",
+        "select-cohorts",
+        "--help"
+      ],
+      "returncode": 0,
+      "output": "usage: retrocomposite select-cohorts [-h] --n1 N1 --n5 N5 --n1-reference\n                                     N1_REFERENCE --n5-reference N5_REFERENCE\n                                     --n1-composites N1_COMPOSITES --output\n                                     OUTPUT [--max-alignments MAX_ALIGNMENTS]\n\noptions:\n  -h, --help            show this help message and exit\n  --n1 N1\n  --n5 N5\n  --n1-reference N1_REFERENCE\n  --n5-reference N5_REFERENCE\n  --n1-composites N1_COMPOSITES\n  --output OUTPUT\n  --max-alignments MAX_ALIGNMENTS\n"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "scripts/select_cohorts.py",
+        "--help"
+      ],
+      "returncode": 0,
+      "output": "usage: select_cohorts.py select-cohorts [-h] --n1 N1 --n5 N5 --n1-reference\n                                        N1_REFERENCE --n5-reference\n                                        N5_REFERENCE --n1-composites\n                                        N1_COMPOSITES --output OUTPUT\n                                        [--max-alignments MAX_ALIGNMENTS]\n\noptions:\n  -h, --help            show this help message and exit\n  --n1 N1\n  --n5 N5\n  --n1-reference N1_REFERENCE\n  --n5-reference N5_REFERENCE\n  --n1-composites N1_COMPOSITES\n  --output OUTPUT\n  --max-alignments MAX_ALIGNMENTS\n"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "returncode": 0,
+      "output": ""
+    }
+  ],
+  "files": {
+    "src/retrocomposite/selection.py": "0efb5e31f5379b863ddb5ac5339f9fe56fa5ccd98b0bed7303477120eea9d033",
+    "src/retrocomposite/segments.py": "59da9e1c6ecea558da05379a1d40b0a3979d9258aa7cd8ed0b416d3226c601db",
+    "src/retrocomposite/preparation.py": "cabe4075ccec7bb4fe20c1fb8f8cb22dfd795565f3bacee5b39e83ceb9a87f85",
+    "src/retrocomposite/cli.py": "e118e18661501840e160b8e66d66e56b222fa13bf9b135f734f11b414cc84a7b",
+    "scripts/select_cohorts.py": "946130a29321723160f455f97215099d6ba1c31362962020cbad669073b777d2",
+    "tests/test_selection.py": "5919e6ec71a68246dcdbf773e6b6fc28ca3696941846f690eb41f18d6d9940c0",
+    "PLAN.md": "ad879e2945c745ebcdb847f589787ae75ba030cdcabf521854e0c6effc3a4977",
+    "TODO.md": "628a38399c0cae5a64728c6422e9e1afc122be5eace6c1c38264a9691d3a3d33",
+    "QUESTIONS.md": "7a25b3f9542b5d67841f0a404cffb8a0beeb2c6d73ab98ddb7ac1ad931d581d5",
+    "README.md": "937217169b45882f7485f9437bf0805882bd8fe7220957a5215412cb4c2a86c7",
+    "docs/PREPARATION.md": "a6aaeb1b2afcc5ac21f49857d50064f53543ecfa3fe260de0e053e8f0f8a6d6d",
+    "docs/SELECTION.md": "9831a4fdc078f1d50b5a2b8537d27b68ff137bc4437ee739b45bb17ecc71b4b7",
+    "docs/diagrams/preparation.md": "d8cde1675c93b0635425796e2c3f326aeabc2774f5d3a459f1c2d3cb0573d478",
+    "docs/diagrams/training.md": "fbdaf67d0953e1ab2971df16af452c0b1b9af98ad35965865568ff6c49151555"
+  },
+  "scope": "Synthetic and tiny natively certified fixtures; full refreshed production selection not run"
+}

@@ -6,8 +6,10 @@ __pycache__/
 .ruff_cache/
 build/
 dist/
-data/
-outputs/
+/data/*
+!/data/README.md
+/outputs/*
+!/outputs/README.md
 models/
 *.ckpt
 .DS_Store

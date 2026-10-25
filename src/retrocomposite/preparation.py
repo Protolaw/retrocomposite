@@ -56,7 +56,9 @@ def finish(root, source_files, **details):
             "stereo": "ignored",
             **details,
             "outputs": {
-                p.name: digest(p) for p in sorted(root.iterdir()) if p.is_file()
+                str(p.relative_to(root)): digest(p)
+                for p in sorted(root.rglob("*"))
+                if p.is_file()
             },
         },
     )

@@ -1,9 +1,14 @@
 # Preparation commands and contracts
 
+Workflow: [preparation diagram](diagrams/preparation.md). For the final
+experimental cohorts, use [shared-tactic selection](SELECTION.md).
+
 Run from the Retrocomposite project with `.venv` active. Inputs are read-only;
 each output directory must be new. Production commands should wait for the
 matching refreshed standalone publications. Paths below describe the expected
 layout and are not evidence that those publications have been refreshed.
+Save preparation artifacts and audits under [data/](../data/README.md).
+Training and later-stage results go under [outputs/](../outputs/README.md).
 
 ## Single-step vocabulary and policy data
 
@@ -40,7 +45,8 @@ python scripts/prepare_stock.py \
 Outputs are `n1.smi`, `n5.smi`, `union.smi`, `n1_targets.smi`,
 `n5_targets.smi`, and a leaf-occurrence sidecar. The definition of a leaf is a
 molecule node with no children. Parent `in_stock` flags never terminate traversal.
-The stock scope used in planning is still a question in QUESTIONS.md.
+Use `union.smi`, the stereo-free union of cleaned n1+n5 leaves, as the common
+stock for both planning arms.
 
 These are pre-canonicalized files. Load with SynPlanner's
 `load_building_blocks(path, standardize=False)` to preserve the declared stock
@@ -63,9 +69,18 @@ certified variants, and joins each link to its motif-target molecule. It exports
 only `rrseq_cons`, refuses n5/merged supervision, and preserves native
 decomposition payloads. It does not rebuild or recertify libraries.
 
-This first adapter exports all certified n1 linear occurrences. Shared-tactic
-selection and cross-dataset exclusion manifests remain TODOs; do not describe
-this export alone as a leakage-controlled split.
+This first adapter exports all certified n1 linear occurrences, including
+internal motif targets. The agreed experiment requires restricting these to
+tactics shared by n1 and n5 and applying the confirmed E1-E3 exclusions in
+[PLAN.md](../PLAN.md#primary-occurrence-exclusions): shared final-target routes,
+shared motif inputs, and exact concrete multistep segments, including embedded
+segments. Derive the additional patent-disjoint cohort from those survivors.
+Rebuild all composite support and supervision from each eligible cohort.
+Use the implemented `select-cohorts` command described in [SELECTION.md](SELECTION.md)
+to perform that selection. This raw export command does not filter a cohort. Use n5 only for tactic-overlap
+selection, frozen exclusion checks, and evaluation, never as a source of
+composite training examples or
+decomposition alternatives.
 
 Outputs are `composite.tsv`, `composite_policy_data.tsv`, vocabulary and
 preparation manifests, and `composite_records.jsonl`. The latter retains all
@@ -117,16 +132,23 @@ retrocomposite validate --rules data/composite/composite.tsv
 synplan ranking_policy_training \
   --config configs/mhn_querycgr_gps.yaml \
   --policy_data data/single_step/single_step_policy_data.tsv \
-  --results_dir outputs/single_step --workers 1
+  --results_dir outputs/training/single_step --workers 1
 ```
 
-The analogous composite command uses `data/composite/composite_policy_data.tsv`.
-Do not start long training until validation/seed/hardware decisions are frozen.
-This is the stock CLI interface: it performs SynPlanner's internal product-based
-split, not an externally grouped experimental split. A seed-controlled grouped
-training wrapper is explicitly unfinished. Configuration loading, rule loading,
-and rule-graph encoding are checked by bootstrap/tests; full model training is
-not part of project setup.
+The primary composite training command uses
+`data/cohorts/primary/composite_policy_data.tsv`; the sensitivity command uses
+`data/cohorts/patent_disjoint/composite_policy_data.tsv`. Use separate result
+directories `outputs/training/primary/` and
+`outputs/training/patent_disjoint/`, with distinct run/seed subdirectories
+for repeated experiments. Check each cohort's
+`support.json` for `status: ready` first. Raw unfiltered exports are transport
+artifacts and must not be used for the primary experiment.
+The command above demonstrates native CLI compatibility and uses SynPlanner's
+internal split. For the experiment, use the implemented Retrocomposite
+[grouped split and seed-controlled trainer](TRAINING.md), which freezes explicit
+assignments under `data/splits/` and saves runs under `outputs/training/`.
+Freeze production validation/seed/hardware settings before long training.
+Full model training is not part of project setup.
 
 ## Environment reproducibility
 
