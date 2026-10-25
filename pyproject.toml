@@ -9,8 +9,12 @@ description = "Reproducible data preparation for SynPlanner composite-action exp
 requires-python = ">=3.11,<3.14"
 dependencies = []
 
+[project.optional-dependencies]
+hub = ["huggingface_hub>=1.0,<3"]
+
 [project.scripts]
 retrocomposite = "retrocomposite.cli:main"
+retrocomposite-hub = "retrocomposite.hub:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

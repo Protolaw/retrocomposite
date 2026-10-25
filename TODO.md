@@ -18,6 +18,15 @@ Bootstrap checks use invented chemistry and adapter fixtures, including a real
 MHN forward pass. Full refreshed-library export is pending the upstream input
 release; transport tests do not establish chemistry certification of new data.
 
+## Portability
+
+- [x] Publish the project under the public Protolaw GitHub account.
+- [x] Create public Hugging Face repositories for datasets and model runs.
+- [x] Add versioned uploads and checksum-verified downloads with commit receipts.
+- [ ] Publish the first reviewed production dataset release and record its commit.
+- [ ] Publish trained models with the matching dataset commit.
+- [ ] Verify the full environment on the destination machine, preserving source hashes.
+
 ## Upstream prerequisite (owned by RouteInspector)
 
 - [ ] Refreshed matching n1/n5 route/reference/composite publications are ready.

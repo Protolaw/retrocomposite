@@ -10,6 +10,7 @@ RouteInspector and SynPlanner.
 - [Preparation commands and data contracts](docs/PREPARATION.md)
 - [Shared-tactic selection, exclusion filters, and audits](docs/SELECTION.md)
 - [Grouped splits and seeded training commands](docs/TRAINING.md)
+- [Move between machines: GitHub and Hugging Face](docs/MOBILITY.md)
 - Mermaid workflows: [preparation](docs/diagrams/preparation.md),
   [training](docs/diagrams/training.md), [planning](docs/diagrams/planning.md),
   [post-processing](docs/diagrams/postprocessing.md), and
@@ -53,6 +54,12 @@ Version-controlled configuration stays in `configs/`, environment records in
 `environment/`, and workflow documentation in `docs/`.
 
 ## Setup
+
+Public repositories: [code](https://github.com/Protolaw/retrocomposite),
+[datasets](https://huggingface.co/datasets/Protolaw/retrocomposite-data), and
+[models](https://huggingface.co/Protolaw/retrocomposite-models).
+The [mobility guide](docs/MOBILITY.md) covers versioned uploads, verified downloads,
+and the source snapshots needed to recreate the training environment.
 
 Use Python 3.12 for the initial local environment:
 

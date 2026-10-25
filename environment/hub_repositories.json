@@ -1,0 +1,24 @@
+{
+  "schema": "retrocomposite-hub-repositories/1",
+  "github": {
+    "repo_id": "Protolaw/retrocomposite",
+    "url": "https://github.com/Protolaw/retrocomposite",
+    "public": true
+  },
+  "huggingface": {
+    "dataset": {
+      "repo_id": "Protolaw/retrocomposite-data",
+      "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data",
+      "public": true,
+      "initial_card_revision": "d96c3a4f4710f0f2fd93655f884be317702afd6d"
+    },
+    "model": {
+      "repo_id": "Protolaw/retrocomposite-models",
+      "url": "https://huggingface.co/Protolaw/retrocomposite-models",
+      "public": true,
+      "initial_card_revision": "b2612a1c0971c82a8eaf2f1f6718a5be8bee2543"
+    }
+  },
+  "anonymous_access_verified": true,
+  "artifact_releases_published": false
+}
