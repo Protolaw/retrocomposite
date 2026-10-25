@@ -51,12 +51,12 @@ before upload, so allow temporary disk space comparable to the release size.
 
 ## Download and train from an exact dataset revision
 
-Replace `DATASET_COMMIT_SHA` with the revision printed by upload:
+The verified single-step release is pinned below:
 
 ```sh
 python scripts/hub_artifacts.py download --kind dataset \
-  --release n1-n5-v1 --revision DATASET_COMMIT_SHA \
-  --output data/releases/n1-n5-v1
+  --release n1-n5-single-step-v1 --revision 4ba2b7f366ea881825fbebe343ccefdd7899af42 \
+  --output data/releases/n1-n5-single-step-v1
 ```
 
 The helper downloads only that release, verifies each SHA-256 hash, and publishes
@@ -68,9 +68,9 @@ or tag is accepted and resolved once to a commit; pin the commit for experiments
 With the full environment installed, a restored split is directly usable:
 
 ```sh
-retrocomposite train --split data/releases/n1-n5-v1/splits/primary \
+retrocomposite train --split data/releases/n1-n5-single-step-v1/splits/single_step \
   --config configs/mhn_querycgr_gps.yaml --seed 17 --accelerator cuda \
-  --output outputs/training/primary/seed_17
+  --output outputs/training/single_step/seed_17
 ```
 
 ## Publish and restore a trained model
@@ -132,7 +132,8 @@ source digests, dependency mode, and actual installed versions. Training copies
 these alongside its baseline environment records.
 
 The baseline was recreated on macOS arm64 with all 172 installed package versions
-matching and package/import/configuration checks passing. Linux/CUDA portability
+matching and package/import/configuration checks passing; all 66 project tests
+passed in that reconstructed environment. Linux/CUDA portability
 still requires installation and hardware checks on that platform. Package pins
 constrain applicable dependencies; they do not make different accelerators
 numerically identical. If a different platform needs a deliberate dependency
@@ -150,3 +151,22 @@ bundle release, rather than `--refresh-lock` silently accepting code changes.
 
 The helper uses Hugging Face's official [upload API](https://huggingface.co/docs/huggingface_hub/en/guides/upload)
 and [revision-aware downloads](https://huggingface.co/docs/huggingface_hub/en/guides/download).
+
+## Download the public input-readiness audit
+
+The [detailed audit](https://huggingface.co/datasets/Protolaw/retrocomposite-data/tree/3b5089c2c72dc3a5aba2574360d751fd682dfd33/audits/n1-n5-input-readiness-v1) is published separately from training releases.
+It includes complete extracted patent provenance and the exact three n5 mismatch
+witnesses. Its status is `blocked`; it contains no eligible composite training data.
+All five files were downloaded without authentication and their hashes verified.
+
+```sh
+hf download Protolaw/retrocomposite-data --repo-type dataset \
+  --revision 3b5089c2c72dc3a5aba2574360d751fd682dfd33 \
+  --include 'audits/n1-n5-input-readiness-v1/*' \
+  --local-dir data/downloaded_audits
+```
+
+`preparation.json` contains output hashes, source hashes, and selector/comparator
+code hashes. The Git-tracked publication receipt additionally records the hash
+of `preparation.json` itself. This diagnostic path is separate from the prepared
+training-release layout handled by `scripts/hub_artifacts.py`.

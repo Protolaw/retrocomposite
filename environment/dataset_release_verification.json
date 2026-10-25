@@ -1,0 +1,63 @@
+{
+  "schema": "retrocomposite-dataset-release-verification/1",
+  "release": {
+    "repo_id": "Protolaw/retrocomposite-data",
+    "repo_type": "dataset",
+    "release": "n1-n5-single-step-v1",
+    "revision": "4ba2b7f366ea881825fbebe343ccefdd7899af42",
+    "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/4ba2b7f366ea881825fbebe343ccefdd7899af42",
+    "file_count": 26
+  },
+  "anonymous_download_verified": true,
+  "all_file_hashes_verified": true,
+  "relocated_split_verified": true,
+  "source_hashes": {
+    "n1": "c1e396cd71228e3ab113412428571d223ef943835c3793f91b994b3341359439",
+    "n5": "5a27be2e0199f2bacd66556122f50906a24e27946bb30b1d9472d55d725e71af"
+  },
+  "single_step": {
+    "rule_count": 11209,
+    "policy_rows": 57381,
+    "reaction_occurrences": 71185,
+    "unique_reactions": 57381,
+    "duplicates": 13804,
+    "excluded_reaction_count": 0,
+    "policy_product_normalization": {
+      "changed_rows": 22,
+      "native_rows": "single_step_policy_data.native.tsv",
+      "policy": "retrocomposite.molecule_key; same as stock and grouped splitting",
+      "rows": 57381
+    }
+  },
+  "stock": {
+    "union": 20087,
+    "n1": 13308,
+    "n5": 13195,
+    "unique_targets": {
+      "n1": 9999,
+      "n5": 9999
+    },
+    "targets_in_stock": {
+      "n1": 13,
+      "n5": 8
+    }
+  },
+  "splits": {
+    "single_step": {
+      "seed": 42,
+      "status": "ready",
+      "grouping": "route",
+      "groups": 14832,
+      "largest_group_rows": 54,
+      "train_rows": 51642,
+      "validation_rows": 5739,
+      "actual_validation_fraction": 0.10001568463428662,
+      "overlap": {
+        "groups": 0,
+        "molecules": 0,
+        "routes": 0
+      },
+      "rules_without_validation": 9267
+    }
+  }
+}

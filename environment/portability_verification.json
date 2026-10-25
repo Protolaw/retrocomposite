@@ -24,8 +24,8 @@
     }
   },
   "tests": {
-    "passed": 60,
-    "seconds": 73.7,
+    "passed": 66,
+    "seconds": 37.25,
     "warnings": 1
   },
   "version_differences": {}

@@ -64,7 +64,7 @@ Stock membership describes the experimental terminal set, not commercial availab
 ```sh
 python scripts/prepare_composites.py composite-library \
   --reference-library ../route-inspector/outputs/reference_libraries/n1 \
-  --composite-library ../route-inspector/outputs/composite_libraries/n1 \
+  --composite-library ../route-inspector/outputs/composite_libraries/n1-retrocomposite-v3-20261025 \
   --routes-json ../route-inspector/data/clean/n1_routes.json \
   --output data/composite
 ```

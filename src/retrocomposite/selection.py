@@ -11,6 +11,7 @@ from retrocomposite.segments import Segment, adjacent_paths, node_at, ordered_pa
 
 POLICY = "retrocomposite-cohort-selection/1"
 SEGMENT_POLICY = "full-mapped-reaction-pair-with-all-intermediate-alignments/1"
+PATENT_POLICY = "paroutes-document-identifiers-including-legacy-us-reissue-sir/2"
 
 
 def witness(dataset, route_id, **details):
@@ -30,7 +31,13 @@ def route_patents(root):
     for path, node in reaction_nodes(root):
         ids = reaction_source_identifiers(node, adapter="paroutes-semicolon-v1")
         normalized = re.sub(r"[\s/\-]", "", ids.source_document_id.upper())
-        if not re.fullmatch(r"[A-Z]{2}\d{4,}[A-Z]\d?", normalized):
+        # Older US grants omit kind codes; reissues and statutory invention
+        # registrations have RE/H number prefixes. Preserve the original ID,
+        # including any supplied kind, rather than inventing a suffix or family.
+        if not re.fullmatch(
+            r"(?:[A-Z]{2}\d{4,}[A-Z]\d?|US\d{7,8}|USRE\d{5,6}(?:E\d?)?|USH\d{4,7}(?:H\d?)?)",
+            normalized,
+        ):
             missing.append(
                 {"node_path": path, "source_record_id": ids.source_record_id}
             )
@@ -445,6 +452,7 @@ def select_cohorts(
             "segment_identity": SEGMENT_POLICY,
             "molecule_identity": "canonical stereo-free; charge/isotope retained; atom maps ignored",
             "patent_identity": "PaRoutes original reaction IDs; uppercase; remove whitespace/slash/hyphen; retain kind code",
+            "patent_identity_policy": PATENT_POLICY,
             "max_alignments": max_alignments,
             "shared_tactic_count": len(shared),
             "libraries": library_metadata or {},

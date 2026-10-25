@@ -1,0 +1,18 @@
+{
+  "repo_id": "Protolaw/retrocomposite-data",
+  "repo_type": "dataset",
+  "path": "audits/n1-n5-input-readiness-v1",
+  "revision": "3b5089c2c72dc3a5aba2574360d751fd682dfd33",
+  "file_count": 5,
+  "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/3b5089c2c72dc3a5aba2574360d751fd682dfd33",
+  "status": "blocked-input-audit-only",
+  "anonymous_download_verified": true,
+  "all_file_hashes_verified": true,
+  "verified_files": {
+    "n5_precursor_mismatches.jsonl": "b474d149f59e0ae789efad87b6ef68f302ea63e17cb14c207c05a6829b08320a",
+    "n5_reference_errors.jsonl": "4ae3e9f964e157c6c76b0bd132e623a7d842718edd3f4351275d0ec6bea01797",
+    "patent_provenance.jsonl": "36a0f025f5f2d4eda2bf2d6dfe1d0b8b2dc37b3c6ce1cca2041649c00173858c",
+    "summary.json": "e0dce653155408f8ad3d2d60d14cca9a68af3e39a06922d5c48d18900d9a90e2",
+    "preparation.json": "850e7cd189da0a1888add59f2793785241b7f2e3273ba33e5c12c30d52507e68"
+  }
+}

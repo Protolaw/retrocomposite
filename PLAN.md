@@ -90,7 +90,13 @@ Single-step and stock preparation need the selected n1/n5 JSONs, but do not
 depend on composite libraries. They may be published as an explicitly partial
 release once those source hashes are verified. See the current
 [input-readiness audit](docs/DATASET_READINESS.md) for the chosen source files
-and composite prerequisites.
+and composite prerequisites. The single-step/stock release and grouped split are
+published. The n1 identity-v3 library is built, but three reaction/precursor
+mismatches in n5 routes 3032 and 9035 block a complete E3 index and both composite
+cohorts. Preserve the fixed evaluation set and exact comparison policy while
+resolving those representations upstream; version affected assets after any
+source change. The detailed input audit is public; full occurrence filtering
+and final composite support counts remain pending.
 
 The earlier corrected merged audit recorded 2,127 duplicate routes and 2,146
 shared-target pairs. Those numbers are descriptive of that release, not
@@ -196,8 +202,11 @@ and tuning procedure using only the eligible development data for each cohort.
 
 The implemented patent policy uses original PaRoutes reaction IDs, including
 preprocessing split ancestry; it uppercases IDs and removes whitespace, slashes,
-and hyphens while retaining publication kind codes. This is publication-ID
-disjointness, not patent-family disjointness. Record its coverage. Quarantine
+and hyphens while retaining supplied publication kind codes. Policy
+`paroutes-document-identifiers-including-legacy-us-reissue-sir/2` also recognizes
+legacy US grants without kind codes and RE/H identifiers. It does not invent
+suffixes or infer patent families. All 20,000 selected routes have recognized
+provenance under this policy; record coverage for each future release. Quarantine
 n1 routes with unresolved patent provenance; any unresolved n5 patent provenance
 blocks usable sensitivity assets, because the common n5 evaluation set remains
 fixed. Unknown IDs are not evidence of disjointness. Report the reduction in examples, tactics, and
@@ -220,7 +229,8 @@ using that naming convention. Never reorder the vocabulary independently.
 Single-step extraction delegates chemistry to SynPlanner's current extraction
 API. The checked-in extraction configuration starts from RouteInspector's
 functional-group configuration, with stereo ignored and minimum popularity 1.
-Verify compatibility with the refreshed extraction profile before a full run.
+The extraction settings have been checked against both selected reference
+profiles. Any later source/profile release requires a new compatibility check.
 
 Composite export uses each certified link's exact mapped executable SMARTS,
 not a family representative substituted for it. The product is the occurrence's
@@ -366,6 +376,7 @@ cohorts should both be reported under the selected vocabulary protocol.
    the primary and patent-disjoint composite models.
 7. Unwrap, validate, deduplicate, measure cost/diversity, and publish the audit.
 
-No production library construction, model training, or planning is implied by
-creating this project. Those stages depend on refreshed inputs and the decisions
-listed in QUESTIONS.md.
+The single-step/stock release, grouped single-step split, and upstream identity-v3
+n1 library are complete. Composite cohort materialization awaits the source
+consistency resolution in QUESTIONS.md. No production model training or planning
+has run. Execution details and remaining work are recorded in TODO.md.

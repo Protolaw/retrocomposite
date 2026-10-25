@@ -23,7 +23,10 @@ including internal molecules; planning on n5; the union of cleaned n1+n5 leaves
 as stock for both arms; stereochemistry ignored for this experiment. Composite
 supervision uses the three primary exclusions in PLAN.md, with an additional
 patent-disjoint sensitivity analysis. `retrocomposite select-cohorts` implements
-this selection and publishes audited training assets for both cohorts.
+this selection and exports training assets only when the required audits pass.
+The single-step release is public; both composite cohorts currently await
+resolution of three n5 source inconsistencies. See
+[dataset readiness](docs/DATASET_READINESS.md) for the public diagnostic audit.
 
 This is an intentionally exposed planning benchmark. It is not a claim of
 unseen-molecule or unseen-reaction generalization. Both planning arms use the
@@ -38,6 +41,7 @@ Use [data/](data/README.md) for artifacts prepared before training and
 data/
   single_step/          rules, policy data, and reaction provenance
   stock/                union stock and planning targets
+  cohort_readiness/     input blockers and patent provenance
   cohorts/              primary and patent-disjoint assets and exclusion audits
   splits/               frozen train/validation assignments
 outputs/

@@ -10,12 +10,16 @@ retrocomposite select-cohorts \
   --n5 ../route-inspector/data/clean/n5_routes.json \
   --n1-reference ../route-inspector/outputs/reference_libraries/n1 \
   --n5-reference ../route-inspector/outputs/reference_libraries/n5 \
-  --n1-composites ../route-inspector/outputs/composite_libraries/n1 \
+  --n1-composites ../route-inspector/outputs/composite_libraries/n1-retrocomposite-v3-20261025 \
   --output data/cohorts
 ```
 
 The same arguments work with `python scripts/select_cohorts.py`. Paths above are
-illustrative: select the matching refreshed publications. The output directory
+the currently selected publications. The n1 identity-v3 library is built, but
+three n5 source inconsistencies currently block a complete E3 index. Resolve the
+[input-readiness findings](DATASET_READINESS.md) before rerunning full selection;
+the published input audit is not a completed occurrence-selection audit.
+The output directory
 must be new. The n1 composite publication must use identity version 3. Reference
 tactic identity has its own version namespace: both reference libraries must
 use compatible profiles and the same tactic identity version. All library
@@ -64,7 +68,11 @@ primary cohort because absence of overlap can no longer be established.
 Apply the patent filter to primary survivors. Source IDs are read through
 RouteInspector's PaRoutes adapter, which preserves original IDs behind generated
 preprocessing split nodes. Normalize the publication ID by uppercasing and removing
-whitespace, slashes, and hyphens. Retain the publication kind code. Missing or
+whitespace, slashes, and hyphens. Retain any supplied publication kind code.
+Policy `paroutes-document-identifiers-including-legacy-us-reissue-sir/2` accepts
+legacy US grants without kind codes and RE/H number prefixes, preserving the
+literal normalized ID without inventing suffixes or merging patent families.
+All 20,000 selected routes now have recognized provenance. Missing or
 unrecognized IDs are unresolved; a route can carry several patents, and any
 intersection with n5 excludes the whole route's composite evidence.
 

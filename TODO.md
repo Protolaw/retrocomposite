@@ -15,8 +15,9 @@
 - [x] Verify exported files with the current SynPlanner loader and MHN config.
 
 Bootstrap checks use invented chemistry and adapter fixtures, including a real
-MHN forward pass. Full refreshed-library export is pending the upstream input
-release; transport tests do not establish chemistry certification of new data.
+MHN forward pass. Production single-step assets are published. Composite cohort
+export is blocked by source inconsistencies described in the readiness audit;
+transport tests do not establish chemistry certification of new data.
 
 ## Portability
 
@@ -29,7 +30,11 @@ release; transport tests do not establish chemistry certification of new data.
       save actual per-installation pins/platform with subsequent training runs.
 - [x] Audit available inputs and record the user's choice to use the existing
       `data/clean/n1_routes.json` and `n5_routes.json` as the experiment source.
-- [ ] Publish the first reviewed production dataset release and record its commit.
+- [x] Publish and anonymously verify `n1-n5-single-step-v1`: rules, pairs, stock,
+      targets, provenance, and the grouped single-step split. Record its commit.
+- [x] Publish the detailed input-readiness audit with all patent provenance and
+      three mismatch witnesses; verify all five downloaded file hashes.
+- [ ] Publish eligible primary and patent-disjoint composite dataset releases.
 - [ ] Publish trained models with the matching dataset commit.
 - [ ] Verify the full environment on the destination machine, preserving source hashes.
 
@@ -37,8 +42,12 @@ release; transport tests do not establish chemistry certification of new data.
 
 - [x] Freeze the selected existing n1/n5 source hashes and verify their reference
       libraries match those same files.
-- [ ] Build a separate identity-v3 linear n1 composite publication from the
-      selected source in RouteInspector; review all retained diagnostics.
+- [x] Build a separate identity-v3 linear n1 composite publication from the
+      selected source in RouteInspector: 13,121 certified links, with 1,043
+      uncertified diagnostics retained and excluded from training.
+- [ ] Resolve the three mapped-reaction/route-precursor disagreements in n5
+      routes 3032 and 9035 under an explicit source-chemistry policy. Publish
+      matching source/library revisions and version all affected prepared assets.
 
 This is an input dependency only. Do not implement rebuilding in this project.
 The [readiness audit](docs/DATASET_READINESS.md) records exact evidence. Prepare
@@ -67,18 +76,25 @@ The alternative source-corrected merged release is not the selected input.
       internal motif targets, and report tactics lost after filtering.
 - [x] Preserve every exclusion reason and n5 witness; report overlapping counts
       and quarantine unresolved comparison failures.
-- [x] Rebuild eligible composite pairs, variant/decomposition support, and
-      occurrence counts separately for both cohorts. Future validation splits
-      and frequency priors must use only these retained assets.
+- [x] Implement rebuilding of eligible composite pairs, variant/decomposition
+      support, and occurrence counts separately for both cohorts. Production
+      outputs remain pending; splits and priors must use retained assets only.
 - [x] Implement the additional patent-disjoint cohort, patent-ID normalization,
       provenance quarantine, and coverage/repertoire-loss reports.
 - [x] Keep exclusion processing read-only with respect to cleaned source files;
       single-step and stock preparation remain separate and unfiltered.
 - [ ] Run production cohort selection on refreshed matching publications and
       review all quarantines, support losses, and patent provenance gaps.
-- [ ] Verify extraction profile matches the refreshed libraries.
-- [ ] Prepare production rules, policy data, provenance, targets, and stock.
-- [ ] Measure extraction errors, exclusions, duplicates, and retained coverage.
+- [x] Verify extraction settings match both selected reference-library profiles.
+- [x] Prepare and validate production single-step rules, policy data, provenance,
+      targets, and stock: 11,209 rules, 57,381 pairs, 20,087 stock molecules.
+- [x] Measure single-step extraction errors/exclusions (zero), duplicates
+      (13,804), retained coverage, and 22 normalized native product strings.
+- [x] Recognize legacy US/RE/H patent identifiers; all 20,000 routes have complete
+      recognized provenance under the versioned policy.
+- [x] Publish the exact n5 reference-index blockers without changing source files.
+- [ ] Complete production occurrence filtering and review final exclusions,
+      support losses, quarantines, and composite coverage after source resolution.
 
 ## Training
 
@@ -93,9 +109,11 @@ The alternative source-corrected merged release is not the selected input.
       motif inputs only, after E1-E3.
 - [ ] Train a separate composite MHN on the additional patent-disjoint cohort,
       using the same validation/tuning procedure on that cohort's eligible data.
-- [ ] Generate production split assignments in `data/splits/`; record training metrics,
-      seeds, hardware, checkpoint hashes, and input-vocabulary hashes under
-      `outputs/training/`.
+- [x] Generate the seed-42 production single-step split under `data/splits/`:
+      51,642 train / 5,739 validation rows, no molecule/route/group overlap.
+- [ ] Generate primary and sensitivity composite splits after eligible selection.
+- [ ] Record training metrics, seeds, hardware, checkpoint hashes, and input
+      vocabulary hashes under `outputs/training/`.
 - [ ] Calibrate hybrid head priors on development data.
 
 ## SynPlanner branch (future upstream work)

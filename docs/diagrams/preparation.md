@@ -35,6 +35,8 @@ second diagram. Composite exclusions leave the single-step corpus and stock inta
 flowchart TD
     N1["Certified n1 occurrences of shared linear tactics"]
     N5["Frozen n5 exclusion indexes"]
+    READY{"Complete n5 E3 index?"}
+    BLOCK["data/cohort_readiness/<br/>Publish input audit; no usable composite cohorts"]
     E1["E1: shared final target<br/>Exclude every occurrence in that n1 route"]
     E2["E2: shared n5 root/internal input<br/>Exclude the matching n1 occurrence"]
     E3["E3: exact concrete n5 multistep segment<br/>Exclude occurrences containing matching segments"]
@@ -43,7 +45,10 @@ flowchart TD
     PATENT["Additional patent exclusion<br/>Shared or unknown n1 IDs excluded; missing n5 IDs block"]
     SENS["data/cohorts/patent_disjoint/<br/>Rebuild eligible sensitivity assets"]
     AUDIT["data/cohorts/ audits<br/>All reasons and witnesses, quarantines and support losses"]
-    N1 --> E1 --> E2 --> E3
+    N1 --> READY
+    N5 --> READY
+    READY -->|yes| E1 --> E2 --> E3
+    READY -->|no| BLOCK
     N5 -.-> E1
     N5 -.-> E2
     N5 -.-> E3
@@ -63,7 +68,11 @@ later reasons after the first match. Quarantine unresolved comparisons. Abstract
 tactic overlap alone is not E3; an exact concrete n5 segment embedded within a
 larger n1 occurrence also triggers E3. Rebuild all composite-derived support using
 only retained n1 occurrences, drop unsupported tactics, and report lost n5 coverage.
-Blocked sensitivity cohorts publish audits without trainable assets.
+Incomplete n5 comparison indexes block both cohorts; unresolved n5 patent
+provenance additionally blocks the sensitivity cohort. Blocked cohorts have no
+trainable assets. The current three n5 source inconsistencies and their complete
+patent provenance are published separately under `data/cohort_readiness/`; full
+occurrence filtering remains pending. See [readiness](../DATASET_READINESS.md).
 
 All preparation products remain under [data/](../../data/README.md). Next:
 [training](training.md).

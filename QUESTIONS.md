@@ -7,17 +7,33 @@ Updated: 2026-10-25. Confirmed choices are in PLAN.md; do not ask them again.
 Use the existing `route-inspector/data/clean/n1_routes.json` and `n5_routes.json`,
 as explicitly selected on 2026-10-25. Their hashes begin `c1e396cd` and `5a27be2e`.
 The alternate missing `source_corrected_20261021` files are not a prerequisite.
-Both existing reference libraries match the selected files. Build the required
-identity-v3 n1 composite publication in RouteInspector; n5 composite rules are
-not needed for overlap selection. See [readiness](docs/DATASET_READINESS.md).
+Both reference libraries match the selected files, and the identity-v3 n1
+composite publication is built. n5 composite rules are not needed for overlap
+selection. The detailed input audit is approved for public publication and is
+published with checksum verification. See [readiness](docs/DATASET_READINESS.md).
+
+## Blocking composite preparation
+
+1. **Which source-chemistry policy should reconcile the three n5 precursor
+   mismatches?** Routes 3032 and 9035 contain three mapped reactions whose
+   precursor representations disagree with their route-tree children. They
+   appear tautomer-related, but the agreed identity policy only ignores stereo.
+   Recommended: resolve the witnesses in RouteInspector with a documented
+   choice of authoritative representations, certify consistency, publish matching
+   source/library versions, and then rerun selection and affected preparation.
+   No routes have been dropped, no tautomer-equivalence rule has been added,
+   and the chosen source files remain unchanged. Both composite cohorts are
+   blocked until a complete n5 E3 reference index is available.
 
 ## Before training and hybrid planning
 
 2. **Production validation settings and seed budget?** The grouped splitter and
    seeded trainer are implemented. Defaults are molecule-plus-route components,
    a 10% requested holdout, and split seed 42; patent grouping is available and
-   blocks incomplete provenance. Review actual group sizes and per-rule coverage,
-   then freeze grouping, holdout fraction, and the model-seed list. Reuse each
+   blocks incomplete provenance. The published single-step split has 14,832
+   groups (largest 54 rows), 51,642 train / 5,739 validation rows, and no partition
+   overlap. However, 9,267 of 11,209 rules have no validation examples. Review
+   that coverage, then freeze settings and the model-seed list. Reuse each
    frozen split across model seeds; composite development data remains n1-only.
    See [training details](docs/TRAINING.md).
 3. **Top-50 split and primary cost endpoint?** Initial proposal 40/10; ablations

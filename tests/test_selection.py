@@ -21,6 +21,30 @@ def leaf(smi):
     return {"type": "mol", "smiles": smi}
 
 
+@pytest.mark.parametrize(
+    "patent",
+    [
+        "US04841062",
+        "USRE037303E1",
+        "USRE036736",
+        "USH0002007H1",
+        "USH0002007",
+        "US20000001A1",
+    ],
+)
+def test_valid_legacy_and_special_patent_formats_preserve_identity(patent):
+    root = step(
+        "CO",
+        "[CH3:1][Cl:2].[OH2:3]>>[CH3:1][OH:3]",
+        [leaf("CCl"), leaf("O")],
+        patent=patent,
+    )
+    result = route_patents(root)
+    assert result["complete"]
+    assert result["ids"] == [patent]
+    assert not result["unresolved"]
+
+
 def step(product, reaction, children, patent="US20000001A1"):
     return {
         "type": "mol",
