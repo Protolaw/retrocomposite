@@ -1,0 +1,13 @@
+{
+  "anonymous_download_verified": true,
+  "corrected_release_revision": "e4e575d7a9e066eca65f43fc3fde5b905b0cf309",
+  "files": {
+    "README.md": "93f2a7a51f9956bdea0065d856b7d4d79ac3fedbe2f92da971aa7b9a2569fe6d",
+    "audits/n1-n5-input-readiness-correction-v2/README.md": "1a49ac2e9ba27e6cf2a173d91bdd939b429b098ab34b1c11eb7d6862e5257b06",
+    "audits/n1-n5-input-readiness-correction-v2/verification.json": "405dc121b3463b710e9bf9264f007448d2c200fe7988bf897230cb1f5471ad0f"
+  },
+  "path": "audits/n1-n5-input-readiness-correction-v2",
+  "repo_id": "Protolaw/retrocomposite-data",
+  "revision": "dadf52c6392cafd27cdd17825d1fb731fd12b8e5",
+  "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/dadf52c6392cafd27cdd17825d1fb731fd12b8e5"
+}

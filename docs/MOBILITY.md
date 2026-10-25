@@ -51,12 +51,13 @@ before upload, so allow temporary disk space comparable to the release size.
 
 ## Download and train from an exact dataset revision
 
-The verified single-step release is pinned below:
+The current self-contained release includes both composite cohorts and all
+three InChI-grouped splits; it is pinned below:
 
 ```sh
 python scripts/hub_artifacts.py download --kind dataset \
-  --release n1-n5-single-step-v1 --revision 4ba2b7f366ea881825fbebe343ccefdd7899af42 \
-  --output data/releases/n1-n5-single-step-v1
+  --release n1-n5-composites-inchi-v1 --revision e4e575d7a9e066eca65f43fc3fde5b905b0cf309 \
+  --output data/releases/n1-n5-composites-inchi-v1
 ```
 
 The helper downloads only that release, verifies each SHA-256 hash, and publishes
@@ -68,7 +69,7 @@ or tag is accepted and resolved once to a commit; pin the commit for experiments
 With the full environment installed, a restored split is directly usable:
 
 ```sh
-retrocomposite train --split data/releases/n1-n5-single-step-v1/splits/single_step \
+retrocomposite train --split data/releases/n1-n5-composites-inchi-v1/splits/single_step \
   --config configs/mhn_querycgr_gps.yaml --seed 17 --accelerator cuda \
   --output outputs/training/single_step/seed_17
 ```
@@ -152,7 +153,7 @@ bundle release, rather than `--refresh-lock` silently accepting code changes.
 The helper uses Hugging Face's official [upload API](https://huggingface.co/docs/huggingface_hub/en/guides/upload)
 and [revision-aware downloads](https://huggingface.co/docs/huggingface_hub/en/guides/download).
 
-## Download the public input-readiness audit
+## Download the historical input-readiness audit
 
 The [detailed audit](https://huggingface.co/datasets/Protolaw/retrocomposite-data/tree/3b5089c2c72dc3a5aba2574360d751fd682dfd33/audits/n1-n5-input-readiness-v1) is published separately from training releases.
 It includes complete extracted patent provenance and the exact three n5 mismatch
@@ -170,3 +171,7 @@ hf download Protolaw/retrocomposite-data --repo-type dataset \
 code hashes. The Git-tracked publication receipt additionally records the hash
 of `preparation.json` itself. This diagnostic path is separate from the prepared
 training-release layout handled by `scripts/hub_artifacts.py`.
+
+The original public input-readiness audit has a superseded source-error diagnosis.
+See the [published correction and full cohort results](COHORT_RELEASE.md).
+The historical public release has not been overwritten.

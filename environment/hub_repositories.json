@@ -1,57 +1,82 @@
 {
-  "schema": "retrocomposite-hub-repositories/1",
+  "anonymous_access_verified": true,
+  "artifact_releases_published": true,
   "github": {
+    "public": true,
     "repo_id": "Protolaw/retrocomposite",
-    "url": "https://github.com/Protolaw/retrocomposite",
-    "public": true
+    "url": "https://github.com/Protolaw/retrocomposite"
   },
   "huggingface": {
     "dataset": {
-      "repo_id": "Protolaw/retrocomposite-data",
-      "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data",
-      "public": true,
-      "initial_card_revision": "d96c3a4f4710f0f2fd93655f884be317702afd6d",
-      "releases": [
-        {
-          "repo_id": "Protolaw/retrocomposite-data",
-          "repo_type": "dataset",
-          "release": "n1-n5-single-step-v1",
-          "revision": "4ba2b7f366ea881825fbebe343ccefdd7899af42",
-          "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/4ba2b7f366ea881825fbebe343ccefdd7899af42",
-          "file_count": 26,
-          "anonymous_download_verified": true,
-          "relocated_split_verified": true
-        }
-      ],
       "audits": [
         {
+          "all_file_hashes_verified": true,
+          "anonymous_download_verified": true,
+          "corrected_by_release": "n1-n5-composites-inchi-v1",
+          "file_count": 5,
+          "path": "audits/n1-n5-input-readiness-v1",
           "repo_id": "Protolaw/retrocomposite-data",
           "repo_type": "dataset",
-          "path": "audits/n1-n5-input-readiness-v1",
           "revision": "3b5089c2c72dc3a5aba2574360d751fd682dfd33",
-          "file_count": 5,
-          "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/3b5089c2c72dc3a5aba2574360d751fd682dfd33",
           "status": "blocked-input-audit-only",
-          "anonymous_download_verified": true,
-          "all_file_hashes_verified": true,
+          "superseded_diagnosis": true,
+          "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/3b5089c2c72dc3a5aba2574360d751fd682dfd33",
           "verified_files": {
             "n5_precursor_mismatches.jsonl": "b474d149f59e0ae789efad87b6ef68f302ea63e17cb14c207c05a6829b08320a",
             "n5_reference_errors.jsonl": "4ae3e9f964e157c6c76b0bd132e623a7d842718edd3f4351275d0ec6bea01797",
             "patent_provenance.jsonl": "36a0f025f5f2d4eda2bf2d6dfe1d0b8b2dc37b3c6ce1cca2041649c00173858c",
-            "summary.json": "e0dce653155408f8ad3d2d60d14cca9a68af3e39a06922d5c48d18900d9a90e2",
-            "preparation.json": "850e7cd189da0a1888add59f2793785241b7f2e3273ba33e5c12c30d52507e68"
+            "preparation.json": "850e7cd189da0a1888add59f2793785241b7f2e3273ba33e5c12c30d52507e68",
+            "summary.json": "e0dce653155408f8ad3d2d60d14cca9a68af3e39a06922d5c48d18900d9a90e2"
           }
+        },
+        {
+          "anonymous_download_verified": true,
+          "corrected_release_revision": "e4e575d7a9e066eca65f43fc3fde5b905b0cf309",
+          "files": {
+            "README.md": "93f2a7a51f9956bdea0065d856b7d4d79ac3fedbe2f92da971aa7b9a2569fe6d",
+            "audits/n1-n5-input-readiness-correction-v2/README.md": "1a49ac2e9ba27e6cf2a173d91bdd939b429b098ab34b1c11eb7d6862e5257b06",
+            "audits/n1-n5-input-readiness-correction-v2/verification.json": "405dc121b3463b710e9bf9264f007448d2c200fe7988bf897230cb1f5471ad0f"
+          },
+          "path": "audits/n1-n5-input-readiness-correction-v2",
+          "repo_id": "Protolaw/retrocomposite-data",
+          "revision": "dadf52c6392cafd27cdd17825d1fb731fd12b8e5",
+          "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/dadf52c6392cafd27cdd17825d1fb731fd12b8e5"
         }
       ],
-      "latest_card_revision": "eb5c301a56e3eb1bed4b2972558da6fb802b3b27"
+      "initial_card_revision": "d96c3a4f4710f0f2fd93655f884be317702afd6d",
+      "latest_card_revision": "dadf52c6392cafd27cdd17825d1fb731fd12b8e5",
+      "public": true,
+      "releases": [
+        {
+          "anonymous_download_verified": true,
+          "file_count": 26,
+          "release": "n1-n5-single-step-v1",
+          "relocated_split_verified": true,
+          "repo_id": "Protolaw/retrocomposite-data",
+          "repo_type": "dataset",
+          "revision": "4ba2b7f366ea881825fbebe343ccefdd7899af42",
+          "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/4ba2b7f366ea881825fbebe343ccefdd7899af42"
+        },
+        {
+          "anonymous_download_verified": true,
+          "file_count": 62,
+          "release": "n1-n5-composites-inchi-v1",
+          "relocated_splits_verified": true,
+          "repo_id": "Protolaw/retrocomposite-data",
+          "repo_type": "dataset",
+          "revision": "e4e575d7a9e066eca65f43fc3fde5b905b0cf309",
+          "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/e4e575d7a9e066eca65f43fc3fde5b905b0cf309"
+        }
+      ],
+      "repo_id": "Protolaw/retrocomposite-data",
+      "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data"
     },
     "model": {
-      "repo_id": "Protolaw/retrocomposite-models",
-      "url": "https://huggingface.co/Protolaw/retrocomposite-models",
+      "initial_card_revision": "b2612a1c0971c82a8eaf2f1f6718a5be8bee2543",
       "public": true,
-      "initial_card_revision": "b2612a1c0971c82a8eaf2f1f6718a5be8bee2543"
+      "repo_id": "Protolaw/retrocomposite-models",
+      "url": "https://huggingface.co/Protolaw/retrocomposite-models"
     }
   },
-  "anonymous_access_verified": true,
-  "artifact_releases_published": true
+  "schema": "retrocomposite-hub-repositories/1"
 }

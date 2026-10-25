@@ -1,16 +1,17 @@
-"""Exact concrete adjacent-step comparison, independent of atom-map numbering.
+"""Ordered InChI reaction signatures for exclusion; exact graphs for auditing.
 
-Each step retains both full molecular sides, component membership, bond states,
-and within-reaction atom correspondence. All exact intermediate alignments are
-enumerated, up to a declared bound; truncation is an error, never a non-match.
+Signatures preserve reaction order, side roles and full reactant multiplicity.
+Graph auditing additionally preserves atom correspondence and reaction states;
+failed or truncated graph audits never change signature-based exclusion.
 """
 
 from collections import Counter
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
+import json
 
-from retrocomposite.preparation import molecule_key
+from retrocomposite.identity import molecule_identity
 
 
 def node_at(root, path):
@@ -64,15 +65,15 @@ def parse_step(root, path):
         atom_ids = [atom for mol in side for atom in mol]
         if len(atom_ids) != len(set(atom_ids)):
             raise ValueError("Atom maps overlap between components on a reaction side")
-    product = molecule_key(str(reaction.products[0]))
-    reactants = sorted(molecule_key(str(m)) for m in reaction.reactants)
+    product = molecule_identity(reaction.products[0])
+    reactants = sorted(molecule_identity(m) for m in reaction.reactants)
     children = node.get("children") or []
     if not children or any(c.get("type") != "mol" for c in children):
         raise ValueError("Reaction must have molecule precursors")
-    if product != molecule_key(molecule_node_smiles(parent)):
+    if product != molecule_identity(molecule_node_smiles(parent)):
         raise ValueError("Reaction product disagrees with route molecule")
     if Counter(reactants) != Counter(
-        molecule_key(molecule_node_smiles(c)) for c in children
+        molecule_identity(molecule_node_smiles(c)) for c in children
     ):
         raise ValueError("Reaction reactants disagree with route precursor multiset")
     return reaction, (product, tuple(reactants))
@@ -155,7 +156,9 @@ class Segment:
         # The second product must be the actual selected first-step precursor.
         from route_inspector.routes.access import molecule_node_smiles
 
-        intermediate = molecule_key(molecule_node_smiles(node_at(root, second[:-1])))
+        intermediate = molecule_identity(
+            molecule_node_smiles(node_at(root, second[:-1]))
+        )
         if intermediate != context2[0] or intermediate not in context1[1]:
             raise ValueError("Intermediate does not connect the selected reactions")
         return cls(
@@ -167,20 +170,43 @@ class Segment:
         )
 
     @property
+    def signature(self):
+        """Two reactions in root-to-leaf order: (product, sorted reactants).
+
+        The selected intermediate is already the second reaction's product.
+        Repeated reactant InChIs remain repeated, preserving stoichiometric counts.
+        """
+        return self.context[:2]
+
+    def matches_signature(self, other):
+        return self.signature == other.signature
+
+    def audit_graph_match(self, other):
+        status, error = graph_match_audit(
+            self.first,
+            self.second,
+            self.context,
+            other.first,
+            other.second,
+            other.context,
+            min(self.max_alignments, other.max_alignments),
+        )
+        return {"status": status, **({"error": error} if error else {})}
+
+    @property
     def graphs(self):
         return aligned_graphs(
             self.first, self.second, self.context[2], self.max_alignments
         )
 
     def equivalent_to(self, other):
-        from route_inspector.rules.graph import labelled_graphs_are_isomorphic
-
+        """Exact graph equivalence for diagnostics only; never the E3 predicate."""
         if self.context != other.context:
             return False
         # Force complete enumeration before accepting any match.
         left, right = self.graphs, other.graphs
         return any(
-            lkey == rkey and labelled_graphs_are_isomorphic(lgraph, rgraph)
+            lkey == rkey and (lgraph == rgraph or exact_graphs_match(lgraph, rgraph))
             for lkey, lgraph in left
             for rkey, rgraph in right
         )
@@ -190,7 +216,6 @@ class Segment:
 def aligned_graphs(first_text, second_text, intermediate, max_alignments):
     """Bound graph memory while retaining compact text for the full n5 index."""
     from chython import smiles
-    from route_inspector.rules.graph import graph_coarse_signature
 
     if max_alignments < 1:
         raise ValueError("max_alignments must be positive")
@@ -199,7 +224,7 @@ def aligned_graphs(first_text, second_text, intermediate, max_alignments):
     product = second.products[0]
     product_atoms = dict(product.atoms())
     for component, reactant in enumerate(first.reactants):
-        if molecule_key(str(reactant)) != intermediate:
+        if molecule_identity(reactant) != intermediate:
             continue
         reactant_atoms = dict(reactant.atoms())
         for mapping in product.get_mapping(
@@ -235,5 +260,53 @@ def aligned_graphs(first_text, second_text, intermediate, max_alignments):
                 for a, b in mapping.items()
             ],
         }
-        result.append((graph_coarse_signature(graph), graph))
+        result.append((graph_label_counts(graph), graph))
     return result
+
+
+@lru_cache(maxsize=4096)
+def graph_match_audit(
+    first, second, context, other_first, other_second, other_context, max_alignments
+):
+    """Cache small audit results, not the potentially large graph families."""
+    left = Segment(first, second, context, {}, max_alignments)
+    right = Segment(other_first, other_second, other_context, {}, max_alignments)
+    try:
+        return ("match" if left.equivalent_to(right) else "different"), None
+    except (ValueError, TypeError, KeyError, IndexError, RecursionError) as exc:
+        return "unresolved", str(exc)
+
+
+def graph_label_counts(graph):
+    """Cheap necessary condition only; exact matching always resolves collisions."""
+    return tuple(
+        tuple(
+            sorted(
+                Counter(
+                    json.dumps(row["label"], sort_keys=True) for row in graph[kind]
+                ).items()
+            )
+        )
+        for kind in ("atoms", "bonds")
+    )
+
+
+def exact_graphs_match(left, right):
+    """Exact VF2 isomorphism retaining every atom, bond and component label."""
+    import networkx as nx
+
+    def labelled(graph):
+        result = nx.Graph()
+        for row in graph["atoms"]:
+            result.add_node(row["node"], label=json.dumps(row["label"], sort_keys=True))
+        for row in graph["bonds"]:
+            a, b = row["nodes"]
+            result.add_edge(a, b, label=json.dumps(row["label"], sort_keys=True))
+        return result
+
+    return nx.is_isomorphic(
+        labelled(left),
+        labelled(right),
+        node_match=nx.algorithms.isomorphism.categorical_node_match("label", None),
+        edge_match=nx.algorithms.isomorphism.categorical_edge_match("label", None),
+    )

@@ -1,0 +1,36 @@
+{
+  "schema": "retrocomposite-inchi-identity-verification/1",
+  "tests": {
+    "passed": 75,
+    "warnings": 1,
+    "seconds": 55.78
+  },
+  "n5_reference_index": {
+    "adjacent_pairs": 28958,
+    "correction": "Earlier three precursor mismatches were caused by asymmetric SMILES canonicalization, not inconsistent stored precursor edges.",
+    "full_occurrence_filtering_completed": false,
+    "molecule_identity": {
+      "chython_synplan_version": "1.108",
+      "identifier": "full Standard InChI",
+      "ignore_stereo": true,
+      "libinchi_binary": "libinchi_arm64.dylib",
+      "libinchi_sha256": "956d0d4c97ebca1cdf04157585897b638a153c21d5d3df6272126d4a3800846b",
+      "policy": "chython-standard-inchi-stereo-free/1",
+      "tautomer_policy": "Standard InChI mobile-H normalization"
+    },
+    "patent_incomplete": 0,
+    "reference_errors": 0,
+    "routes": 10000,
+    "schema": "retrocomposite-inchi-reference-readiness/1",
+    "unique_nonterminal_inputs": 36223,
+    "unique_targets": 9999
+  },
+  "legacy_split_load": {
+    "schema": "retrocomposite-grouped-split/1",
+    "rows": 57381,
+    "train_rows": 51642,
+    "validation_rows": 5739,
+    "unchanged": true
+  },
+  "full_occurrence_filtering_completed": false
+}

@@ -8,8 +8,14 @@ from pathlib import Path
 import shutil
 
 from retrocomposite import preparation as prep
+from retrocomposite.identity import (
+    MOLECULE_IDENTITY_POLICY,
+    identity_metadata,
+    molecule_identity,
+)
 
-SCHEMA = "retrocomposite-grouped-split/1"
+SCHEMA = "retrocomposite-grouped-split/2"
+LEGACY_SCHEMA = "retrocomposite-grouped-split/1"
 
 
 def read_json(path):
@@ -51,13 +57,43 @@ def single_step_sources(assets, rules, rows):
     from chython import smiles
     from synplan.chem.utils import unite_molecules
 
+    # Join the native products back to their reactions before applying the
+    # recorded model-input normalization. Some keto/enol changes made during
+    # preparation are not merged by Standard InChI. Their row provenance still
+    # comes from the original product, while grouping uses the exported input.
+    provenance_rows = rows
+    native = assets / "single_step_policy_data.native.tsv"
+    ledger = assets / "policy_product_normalization.jsonl"
+    if native.exists():
+        provenance_rows = read_tsv(native)
+        if len(provenance_rows) != len(rows):
+            raise ValueError("Native and normalized policy row counts differ")
+        expected_changes = []
+        for index, (original, normalized) in enumerate(
+            zip(provenance_rows, rows, strict=True)
+        ):
+            if original["rule_id"] != normalized["rule_id"]:
+                raise ValueError("Normalization changed a policy rule label")
+            if original["product_smiles"] != normalized["product_smiles"]:
+                expected_changes.append(
+                    {
+                        "row_index": index,
+                        "rule_id": int(original["rule_id"]),
+                        "original": original["product_smiles"],
+                        "canonical": normalized["product_smiles"],
+                    }
+                )
+        if not ledger.is_file() or list(prep.read_records(ledger)) != expected_changes:
+            raise ValueError("Policy normalization ledger does not match native rows")
+    elif ledger.exists():
+        raise ValueError("Policy normalization ledger has no native rows")
     reactions = {}
     for record in prep.read_records(assets / "reaction_provenance.jsonl"):
         index = record["input_index"]
         if index in reactions or not record.get("sources"):
             raise ValueError("Duplicate or unsupported reaction provenance")
         rxn = smiles(record["mapped"])
-        product = prep.molecule_key(str(unite_molecules(rxn.products)))
+        product = molecule_identity(unite_molecules(rxn.products))
         routes = {route_key(s["dataset"], s["route_id"]) for s in record["sources"]}
         reactions[index] = (product, routes)
     pairs, counts = defaultdict(set), Counter()
@@ -67,10 +103,16 @@ def single_step_sources(assets, rules, rows):
             pair = (product, rule_id)
             pairs[pair].update(routes)
             counts[pair] += 1
-    observed = Counter((r["product_smiles"], int(r["rule_id"])) for r in rows)
+    observed = Counter(
+        (molecule_identity(r["product_smiles"]), int(r["rule_id"]))
+        for r in provenance_rows
+    )
     if observed != counts:
         raise ValueError("Policy rows do not match reaction/rule provenance")
-    return [sorted(pairs[(r["product_smiles"], int(r["rule_id"]))]) for r in rows]
+    return [
+        sorted(pairs[(molecule_identity(r["product_smiles"]), int(r["rule_id"]))])
+        for r in provenance_rows
+    ]
 
 
 def composite_sources(assets, rules, rows):
@@ -121,7 +163,9 @@ def patent_sources(assets, kind, sources, manifest):
     return patents, source_files
 
 
-def assign_groups(examples, seed, validation_fraction, grouping):
+def assign_groups(
+    examples, seed, validation_fraction, grouping, *, legacy_smiles=False
+):
     """Union overlapping provenance, then select whole groups with train coverage."""
     if grouping not in {"route", "patent"}:
         raise ValueError("grouping must be route or patent")
@@ -129,6 +173,11 @@ def assign_groups(examples, seed, validation_fraction, grouping):
         raise ValueError("Require 0 < validation_fraction < 1 and a uint32 seed")
     if not examples:
         raise ValueError("No examples to split")
+    if not legacy_smiles:
+        examples = [
+            {**example, "molecule_inchi": molecule_identity(example["product_smiles"])}
+            for example in examples
+        ]
     parents = list(range(len(examples)))
 
     def find(i):
@@ -141,7 +190,10 @@ def assign_groups(examples, seed, validation_fraction, grouping):
     for i, example in enumerate(examples):
         if not example["routes"]:
             raise ValueError("Every row needs route provenance")
-        keys = {"molecule:" + example["product_smiles"]}
+        keys = {
+            "molecule:"
+            + example["product_smiles" if legacy_smiles else "molecule_inchi"]
+        }
         keys.update("route:" + r for r in example["routes"])
         if grouping == "patent":
             keys.update("patent:" + p for p in example["patents"])
@@ -210,7 +262,7 @@ def assign_groups(examples, seed, validation_fraction, grouping):
     missing_patents = sum(a["forced_train_missing_patent"] for a in assignments)
     overlap = {}
     for label, field in (
-        ("molecules", "product_smiles"),
+        ("molecules", "product_smiles" if legacy_smiles else "molecule_inchi"),
         ("routes", "routes"),
         ("groups", "group_id"),
         ("known_patents", "patents"),
@@ -334,6 +386,7 @@ def create_split(
                 )
         result = {
             "schema": SCHEMA,
+            "molecule_identity": identity_metadata(),
             "seed": seed,
             "grouping": grouping,
             "requested_validation_fraction": validation_fraction,
@@ -355,7 +408,10 @@ def create_split(
             out,
             source_files,
             kind="grouped-split",
-            implementation=prep.digest(__file__),
+            implementation={
+                "splitting.py": prep.digest(__file__),
+                "identity.py": prep.digest(Path(__file__).with_name("identity.py")),
+            },
         )
     return result
 
@@ -365,8 +421,15 @@ def load_split(path):
     path = Path(path).resolve()
     verify_publication(path)
     metadata = read_json(path / "split.json")
-    if metadata.get("schema") != SCHEMA or metadata["status"] != "ready":
+    if (
+        metadata.get("schema") not in {SCHEMA, LEGACY_SCHEMA}
+        or metadata["status"] != "ready"
+    ):
         raise ValueError("Training requires a ready grouped split with validation rows")
+    if metadata["schema"] == SCHEMA and (
+        metadata.get("molecule_identity", {}).get("policy") != MOLECULE_IDENTITY_POLICY
+    ):
+        raise ValueError("Unsupported split molecule identity policy")
     rows = read_tsv(path / metadata["policy_data"])
     assignments = list(prep.read_records(path / "assignments.jsonl"))
     if [a["row_index"] for a in assignments] != list(range(len(rows))):
@@ -376,6 +439,7 @@ def load_split(path):
         metadata["seed"],
         metadata["requested_validation_fraction"],
         metadata["grouping"],
+        legacy_smiles=metadata["schema"] == LEGACY_SCHEMA,
     )
     if rebuilt != assignments or report["status"] != "ready":
         raise ValueError("Split assignments do not match the frozen grouping policy")

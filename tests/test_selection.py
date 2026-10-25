@@ -422,7 +422,7 @@ def test_root_exclusion_applies_to_internal_occurrences_and_eligible_internal_su
     assert report["cohorts"]["patent_disjoint"]["occurrences"] == 1
 
 
-def test_alignment_limit_quarantines_embedded_occurrence(tmp_path):
+def test_alignment_limit_is_audit_only_for_embedded_occurrence(tmp_path):
     n1, n5 = tmp_path / "n1.json", tmp_path / "n5.json"
     root = step(
         "CCBr",
@@ -434,7 +434,10 @@ def test_alignment_limit_quarantines_embedded_occurrence(tmp_path):
     item = record("candidate", n1, root, paths=[(0,), (0, 0, 0), (0, 0, 0, 0, 0)])
     out = tmp_path / "out"
     report = select_cohorts(n1, n5, [item], shared(), out, max_alignments=1)
-    assert report["primary_status_counts"] == {"quarantined": 1}
+    assert report["primary_status_counts"] == {"excluded": 1}
+    assert report["reason_counts"] == {"E3_SHARED_CONCRETE_SEGMENT": 1}
+    assert report["links_with_errors"] == 0
+    assert report["exact_graph_audit"]["status_counts"] == {"unresolved": 1}
     assert "enumeration exceeded" in (out / "occurrence_audit.jsonl").read_text()
 
 
@@ -530,3 +533,85 @@ def test_real_certified_library_to_cli_and_mismatched_release(native_libraries, 
     with pytest.raises(ValueError, match="standalone cleaned source"):
         main(args)
     assert not (root / "wrong-source").exists()
+
+
+def test_signature_preserves_order_sides_and_reactant_multiplicity():
+    from dataclasses import replace
+
+    original = pair(chain())
+    one, two, intermediate = original.context
+    assert not original.matches_signature(
+        replace(original, context=(two, one, intermediate))
+    )
+    duplicate = (two[0], tuple(sorted((*two[1], two[1][0]))))
+    assert not original.matches_signature(
+        replace(original, context=(one, duplicate, intermediate))
+    )
+    reversed_side = (one[1][0], (one[0],))
+    assert not original.matches_signature(
+        replace(original, context=(reversed_side, two, intermediate))
+    )
+
+
+def test_e3_excludes_mapping_differences_without_e1_or_e2(tmp_path):
+    root = embedded()
+    first = root["children"][0]["children"][0]["children"][0]
+    first["smiles"] = "[CH3:1][CH2:2][OH:3]>>[CH3:2][CH:1]=[O:3]"
+    n1, n5 = tmp_path / "n1.json", tmp_path / "n5.json"
+    prep.write_json(n1, {"embedded": root})
+    prep.write_json(n5, {"test": chain()})
+    paths = [(0,), (0, 0, 0), (0, 0, 0, 0, 0)]
+    report = select_cohorts(
+        n1, n5, [record("embedded", n1, root, paths=paths)], shared(), tmp_path / "out"
+    )
+    assert report["reason_counts"] == {"E3_SHARED_CONCRETE_SEGMENT": 1}
+    assert report["primary_status_counts"] == {"excluded": 1}
+    assert report["links_with_errors"] == 0
+    assert report["exact_graph_audit"]["status_counts"] == {"different": 1}
+    assert not report["exact_graph_audit"]["affects_eligibility"]
+
+
+def test_unresolved_graph_audit_does_not_change_e3_exclusion(tmp_path):
+    root = symmetric_chain()
+    n1, n5 = tmp_path / "n1.json", tmp_path / "n5.json"
+    prep.write_json(n1, {"same": root})
+    prep.write_json(n5, {"test": root})
+    report = select_cohorts(
+        n1, n5, [record("same", n1, root)], shared(), tmp_path / "out", max_alignments=1
+    )
+    assert report["reason_counts"]["E3_SHARED_CONCRETE_SEGMENT"] == 1
+    assert report["links_with_errors"] == 0
+    assert report["exact_graph_audit"]["status_counts"] == {"unresolved": 1}
+    audit = next(prep.read_records(tmp_path / "out/occurrence_audit.jsonl"))
+    graph = audit["exclusions"]["E3_SHARED_CONCRETE_SEGMENT"][0]["exact_graph_audit"]
+    assert "enumeration exceeded" in graph["error"]
+    assert audit["primary_status"] == "excluded"
+
+
+def test_accelerated_graph_audit_matches_native_labelled_isomorphism():
+    from retrocomposite.segments import exact_graphs_match, graph_label_counts
+    from route_inspector.rules.graph import labelled_graphs_are_isomorphic
+
+    original = chain()
+    renumbered = json.loads(
+        re.sub(r":(\d+)\]", lambda m: f":{1000 - int(m[1])}]", json.dumps(original))
+    )
+    left, right = pair(original).graphs[0][1], pair(renumbered).graphs[0][1]
+    assert labelled_graphs_are_isomorphic(left, right)
+    assert exact_graphs_match(left, right)
+
+    # Same coarse label counts, different placement of bond states around a ring.
+    def cycle(labels):
+        return {
+            "graph_schema_version": 1,
+            "atoms": [{"node": i, "label": {"type": "atom"}} for i in range(4)],
+            "bonds": [
+                {"nodes": [i, (i + 1) % 4], "label": {"state": label}}
+                for i, label in enumerate(labels)
+            ],
+        }
+
+    adjacent, alternating = cycle([1, 1, 2, 2]), cycle([1, 2, 1, 2])
+    assert graph_label_counts(adjacent) == graph_label_counts(alternating)
+    assert not labelled_graphs_are_isomorphic(adjacent, alternating)
+    assert not exact_graphs_match(adjacent, alternating)

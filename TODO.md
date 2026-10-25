@@ -16,7 +16,7 @@
 
 Bootstrap checks use invented chemistry and adapter fixtures, including a real
 MHN forward pass. Production single-step assets are published. Composite cohort
-export is blocked by source inconsistencies described in the readiness audit;
+export uses the corrected InChI identity and signature policy;
 transport tests do not establish chemistry certification of new data.
 
 ## Portability
@@ -34,7 +34,7 @@ transport tests do not establish chemistry certification of new data.
       targets, provenance, and the grouped single-step split. Record its commit.
 - [x] Publish the detailed input-readiness audit with all patent provenance and
       three mismatch witnesses; verify all five downloaded file hashes.
-- [ ] Publish eligible primary and patent-disjoint composite dataset releases.
+- [x] Publish eligible primary and patent-disjoint composite dataset releases.
 - [ ] Publish trained models with the matching dataset commit.
 - [ ] Verify the full environment on the destination machine, preserving source hashes.
 
@@ -45,9 +45,15 @@ transport tests do not establish chemistry certification of new data.
 - [x] Build a separate identity-v3 linear n1 composite publication from the
       selected source in RouteInspector: 13,121 certified links, with 1,043
       uncertified diagnostics retained and excluded from training.
-- [ ] Resolve the three mapped-reaction/route-precursor disagreements in n5
-      routes 3032 and 9035 under an explicit source-chemistry policy. Publish
-      matching source/library revisions and version all affected prepared assets.
+- [x] Consume the user-updated standalone `outputs/composite_libraries/n1` v3
+      publication for the current release, selecting its 13,121 linear links only.
+- [x] Diagnose the three n5 mismatch false positives and replace molecular
+      identity comparisons with Chython-generated stereo-free Standard InChI.
+- [x] Rebuild the full n5 reference index: 10,000 routes, 28,958 adjacent pairs,
+      zero reference errors and zero incomplete patent routes.
+- [ ] Review route 9035 inferred tautomer-step granularity and its retained
+      unresolved final-cyclization split separately from edge consistency.
+- [x] Publish a versioned correction of the earlier public readiness diagnosis.
 
 This is an input dependency only. Do not implement rebuilding in this project.
 The [readiness audit](docs/DATASET_READINESS.md) records exact evidence. Prepare
@@ -59,13 +65,16 @@ The alternative source-corrected merged release is not the selected input.
 - [x] Select shared n1/n5 linear tactics, eligible n1 root/internal motif targets,
       and the union of cleaned n1+n5 leaves as the common stock.
 - [x] Adopt E1 shared final-target route exclusion, E2 shared motif-input
-      exclusion, and E3 exact concrete multistep-segment exclusion for primary
+      exclusion, and E3 ordered InChI reaction-signature exclusion for primary
       composite training; adopt patent-disjointness as a sensitivity analysis.
 - [x] Implement frozen n5 root, internal nonterminal molecule, and concrete
-      consecutive-segment indexes with canonical stereo-free identities.
+      consecutive-segment indexes with stereo-free Standard InChI molecule identities
+      and diagnostic exact reaction-state graphs.
 - [x] Implement E1 whole-route and E2 occurrence filters.
-- [x] Implement and verify E3 exact concrete segment matching, including embedded
-      segments of at least two reactions and their reactant/branch context.
+- [x] Implement and verify E3 ordered InChI signatures, including embedded
+      segments, reaction order, side roles and full reactant multiplicity.
+- [x] Retain exact graph matching only as an audit; graph differences and
+      unresolved alignment enumeration never override signature exclusions.
 - [x] Add checks for atom-map/stereo invariance, different-label shared inputs,
       abstract-tactic matches without concrete overlap, and embedded segments.
 - [ ] Recompute route, target, reaction, tactic, and model-input overlap audits.
@@ -75,15 +84,16 @@ The alternative source-corrected merged release is not the selected input.
       manifests; retain eligible n1 examples and variants only, including
       internal motif targets, and report tactics lost after filtering.
 - [x] Preserve every exclusion reason and n5 witness; report overlapping counts
-      and quarantine unresolved comparison failures.
+      and quarantine unresolved eligibility failures. Graph-audit failures are
+      recorded separately and do not change exclusions.
 - [x] Implement rebuilding of eligible composite pairs, variant/decomposition
       support, and occurrence counts separately for both cohorts. Production
-      outputs remain pending; splits and priors must use retained assets only.
+      outputs are published and verified; splits and priors use retained assets only.
 - [x] Implement the additional patent-disjoint cohort, patent-ID normalization,
       provenance quarantine, and coverage/repertoire-loss reports.
 - [x] Keep exclusion processing read-only with respect to cleaned source files;
       single-step and stock preparation remain separate and unfiltered.
-- [ ] Run production cohort selection on refreshed matching publications and
+- [x] Run production cohort selection on refreshed matching publications and
       review all quarantines, support losses, and patent provenance gaps.
 - [x] Verify extraction settings match both selected reference-library profiles.
 - [x] Prepare and validate production single-step rules, policy data, provenance,
@@ -92,9 +102,10 @@ The alternative source-corrected merged release is not the selected input.
       (13,804), retained coverage, and 22 normalized native product strings.
 - [x] Recognize legacy US/RE/H patent identifiers; all 20,000 routes have complete
       recognized provenance under the versioned policy.
-- [x] Publish the exact n5 reference-index blockers without changing source files.
-- [ ] Complete production occurrence filtering and review final exclusions,
-      support losses, quarantines, and composite coverage after source resolution.
+- [x] Preserve the historical n5 diagnostic and publish its corrected source-error
+      interpretation alongside the successful full selection release.
+- [x] Complete production occurrence filtering and review final exclusions,
+      support losses, quarantines, and composite coverage using the InChI policy.
 
 ## Training
 
@@ -111,7 +122,13 @@ The alternative source-corrected merged release is not the selected input.
       using the same validation/tuning procedure on that cohort's eligible data.
 - [x] Generate the seed-42 production single-step split under `data/splits/`:
       51,642 train / 5,739 validation rows, no molecule/route/group overlap.
-- [ ] Generate primary and sensitivity composite splits after eligible selection.
+- [x] Use InChI molecular components in new version-2 splits; preserve legacy
+      version-1 split loading and its original grouping checks.
+- [x] Regenerate the production single-step split under the InChI policy:
+      51,642 train / 5,739 validation rows, with zero molecule/route/group overlap.
+      Join native products through the preserved normalization ledger before
+      grouping actual training inputs; unchanged single-step files are reused.
+- [x] Generate primary and sensitivity composite splits after eligible selection.
 - [ ] Record training metrics, seeds, hardware, checkpoint hashes, and input
       vocabulary hashes under `outputs/training/`.
 - [ ] Calibrate hybrid head priors on development data.
@@ -150,3 +167,5 @@ The alternative source-corrected merged release is not the selected input.
 - [ ] Measure solve-versus-cost, reference recovery, and explicit-route diversity.
 - [ ] Produce target-level paired uncertainty estimates and final audit report
       under `outputs/analysis/`, including patent-cohort support losses.
+
+Verified production counts and public revisions: [cohort release](docs/COHORT_RELEASE.md).

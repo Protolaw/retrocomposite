@@ -8,15 +8,15 @@ The user selected the existing standalone files under RouteInspector's
 | `data/clean/n1_routes.json` | `c1e396cd71228e3ab113412428571d223ef943835c3793f91b994b3341359439` |
 | `data/clean/n5_routes.json` | `5a27be2e0199f2bacd66556122f50906a24e27946bb30b1d9472d55d725e71af` |
 
-The existing n1/n5 reference libraries match these exact source hashes and use
-the same extraction profile and tactic identity version 4. Their older composite
-companions use identity version 2. A new linear n1 companion was constructed
-in RouteInspector at `outputs/composite_libraries/n1-retrocomposite-v3-20261025`;
-the experiment requires composite identity version 3. n5 composites are not
-needed for shared-tactic selection. The new library contains 8,279 composite
-identities and 13,121 certified links from 14,164 attempted occurrences. All
-1,043 uncertified attempts remain in its diagnostics and are excluded from
-training. Exact variants number 10,764; every variant uses identity version 3.
+The n1/n5 reference libraries match these exact source hashes and use the same
+extraction profile and tactic identity version 4. The user-updated standalone
+`outputs/composite_libraries/n1` now uses composite identity version 3 and is the
+source for this release. It contains 13,445 certified links: 13,121 linear
+`rrseq_cons` links and 324 branched links. Only the linear links enter selection.
+The complete upstream publication has 8,552 identities, 11,076 exact variants,
+and 1,074 uncertified construction attempts retained as diagnostics. Those
+uncertified attempts do not enter supervision. n5 composites are not required.
+The earlier linear-only v3 publication remains recorded as historical provenance.
 
 The alternative merged publication was built from source hashes beginning
 `9902ff12` and `fb8bf966`. Its source directory is absent from the local checkout.
@@ -39,7 +39,7 @@ initializer rejects functional-group query objects during configuration
 deserialization. The failed parallel attempt published no artifacts. Sequential
 extraction uses the same profile and preserves the exact software snapshot.
 
-## Single-step release
+## Historical single-step release (version 1)
 
 - 71,185 reaction occurrences yield 57,381 unique reactions and training pairs.
 - 11,209 rules pass native loading and QueryCGR graph encoding; zero extraction
@@ -57,43 +57,29 @@ extraction uses the same profile and preserves the exact software snapshot.
 Dataset and split manifests are in the release. Compact checked counts and
 revision receipts are tracked under `environment/`.
 
-## Composite readiness: blocked by three source inconsistencies
+## Composite reference indexing: corrected and ready
 
-The new identity-v3 n1 library is available, but the complete n5 E3 comparison
-index cannot be constructed. Three mapped reactions disagree with their route
-precursor multisets after the agreed stereo-free normalization:
+The earlier public input-readiness audit reported three precursor mismatches in
+n5 routes 3032 and 9035. That source-error diagnosis was incorrect: each stored
+mapped reaction precursor equals its route child exactly. Retrocomposite's
+asymmetric extra chemical canonicalization introduced different tautomers.
 
-| n5 route | Reaction-node path | Source reaction ID |
-| --- | --- | --- |
-| `3032` | `[0]` | `US20150225423A1;0414;1736056` |
-| `9035` | `[0,0,0,0,0]` | `US05109001;;249758` |
-| `9035` | `[0,0,0,0,0,0,0]` | `US05109001;;249757` |
+The user selected Chython-generated stereo-free Standard InChI for identity
+checks. The new full n5 index contains 10,000 routes, 28,958 adjacent pairs,
+9,999 target identities, and 36,223 nonterminal identities, with zero reference
+errors and zero incomplete patent routes. New local audit:
+`data/cohort_readiness_inchi/`. Input source hashes remain unchanged.
 
-The exact reaction strings, conflicting molecules, node paths, and all 20,000
-routes' patent provenance are in the public
-[input-readiness audit](https://huggingface.co/datasets/Protolaw/retrocomposite-data/tree/3b5089c2c72dc3a5aba2574360d751fd682dfd33/audits/n1-n5-input-readiness-v1). Its five files passed anonymous download
-and SHA-256 verification. The receipt is
-[`environment/cohort_readiness_publication.json`](../environment/cohort_readiness_publication.json).
-This is a diagnostic publication, not an eligible composite training release.
+See [molecule identity and exact reaction states](MOLECULE_IDENTITY.md) for the
+implementation. E3 uses ordered InChI reaction signatures; exact graph matching
+is diagnostic only and cannot change exclusion decisions.
+The original public audit and its immutable receipts remain historical.
+The [verified composite release](COHORT_RELEASE.md) publishes both eligible cohorts,
+all three InChI-grouped splits and the correction of that source-error diagnosis.
 
-Both primary and patent-disjoint cohorts remain blocked: incomplete n5 indexing
-cannot establish absence of E3 overlap. Full occurrence filtering was stopped
-after establishing this global blocker and has **not completed**. There are no
-production composite training TSVs, composite splits, or final exclusion/support
-counts. Do not infer an empty eligible cohort from this blocked result.
-
-These structures appear to differ in tautomer representations; this is an
-interpretation of the witnesses, not an authorized normalization policy.
-Stereochemistry removal does not resolve them. Reconcile the source reaction
-and route representations in RouteInspector under an explicit chemistry policy,
-publish matching source/library revisions, and rerun selection. The chosen source
-files remain unchanged. Do not silently drop the affected n5 routes or weaken E3.
-If sources change, version and rebuild any affected single-step, stock, and split
-artifacts as well; the present release remains an immutable record of its inputs.
-
-The single-step release passed extraction/loading checks, which do not certify
-agreement between mapped reactions and every route-tree precursor. This known
-source limitation therefore accompanies that release too.
+Route 9035's inferred tautomer-only step and unresolved final-cyclization split
+are separate granularity findings to review upstream. No change to the three
+stored precursor edges is needed to resolve the false mismatch.
 
 ## Patent provenance is resolved
 
@@ -108,4 +94,19 @@ identifier extraction and format, not independent patent-registry verification.
 
 See the [USPTO kind-code documentation](https://www.uspto.gov/learning-and-resources/support-centers/electronic-business-center/kind-codes-included-uspto-patent)
 and [USPTO number-format help](https://patentsgazette.uspto.gov/week27/OG/help/help.html).
-The sensitivity cohort remains blocked by the same incomplete E3 index.
+The full n1 occurrence-selection run also passes. Both cohorts have published,
+verified training assets; see [results and remaining limitations](COHORT_RELEASE.md).
+
+## Complete current training release
+
+The [verified composite release](https://huggingface.co/datasets/Protolaw/retrocomposite-data/tree/e4e575d7a9e066eca65f43fc3fde5b905b0cf309/releases/n1-n5-composites-inchi-v1) is **`n1-n5-composites-inchi-v1`**, pinned at
+`e4e575d7a9e066eca65f43fc3fde5b905b0cf309`. It contains both composite cohorts, unchanged single-step data and
+union stock, new InChI-grouped splits, and complete selection/support audits.
+All 62 payload files passed anonymous download and SHA-256 checks; all three
+relocated splits loaded successfully. The full code suite passes 80 tests.
+
+| Cohort | Rules | Product/rule pairs | Train | Validation |
+| --- | ---: | ---: | ---: | ---: |
+| Single-step | 11,209 | 57,381 | 51,642 | 5,739 |
+| Primary composites | 3,185 | 4,232 | 3,809 | 423 |
+| Patent-disjoint composites | 2,322 | 2,988 | 2,689 | 299 |

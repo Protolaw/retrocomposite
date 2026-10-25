@@ -64,7 +64,7 @@ Stock membership describes the experimental terminal set, not commercial availab
 ```sh
 python scripts/prepare_composites.py composite-library \
   --reference-library ../route-inspector/outputs/reference_libraries/n1 \
-  --composite-library ../route-inspector/outputs/composite_libraries/n1-retrocomposite-v3-20261025 \
+  --composite-library ../route-inspector/outputs/composite_libraries/n1 \
   --routes-json ../route-inspector/data/clean/n1_routes.json \
   --output data/composite
 ```
@@ -79,8 +79,8 @@ This first adapter exports all certified n1 linear occurrences, including
 internal motif targets. The agreed experiment requires restricting these to
 tactics shared by n1 and n5 and applying the confirmed E1-E3 exclusions in
 [PLAN.md](../PLAN.md#primary-occurrence-exclusions): shared final-target routes,
-shared motif inputs, and exact concrete multistep segments, including embedded
-segments. Derive the additional patent-disjoint cohort from those survivors.
+shared motif inputs, and ordered InChI reaction-signature sequences, including
+embedded pairs. Exact graphs are auditing only. Derive the additional patent-disjoint cohort from those survivors.
 Rebuild all composite support and supervision from each eligible cohort.
 Use the implemented `select-cohorts` command described in [SELECTION.md](SELECTION.md)
 to perform that selection. This raw export command does not filter a cohort. Use n5 only for tactic-overlap

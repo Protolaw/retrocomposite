@@ -130,7 +130,7 @@ def main():
             run(*installer, "--no-deps", root / "route-inspector")
             run(*installer, "--no-deps", "-e", project)
             run(python, "-m", "pip", "check")
-            check = "from synplan.ml.config import PolicyNetworkConfig; c=PolicyNetworkConfig.from_yaml('configs/mhn_querycgr_gps.yaml'); assert c.embedder_type=='gps' and c.rule_embedding_type=='query_cgr_graph'; import route_inspector; import retrocomposite; import huggingface_hub; print('Imports and MHN configuration verified')"
+            check = "from synplan.ml.config import PolicyNetworkConfig; c=PolicyNetworkConfig.from_yaml('configs/mhn_querycgr_gps.yaml'); assert c.embedder_type=='gps' and c.rule_embedding_type=='query_cgr_graph'; import route_inspector; import retrocomposite; import huggingface_hub; from retrocomposite.identity import molecule_identity; assert molecule_identity('CO').startswith('InChI=1S/'); print('Imports, Chython InChI and MHN configuration verified')"
             run(python, "-c", check, cwd=project)
             receipt["installed"] = json.loads(
                 subprocess.check_output(

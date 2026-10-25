@@ -24,9 +24,11 @@ as stock for both arms; stereochemistry ignored for this experiment. Composite
 supervision uses the three primary exclusions in PLAN.md, with an additional
 patent-disjoint sensitivity analysis. `retrocomposite select-cohorts` implements
 this selection and exports training assets only when the required audits pass.
-The single-step release is public; both composite cohorts currently await
-resolution of three n5 source inconsistencies. See
-[dataset readiness](docs/DATASET_READINESS.md) for the public diagnostic audit.
+The single-step release is public. Chython stereo-free InChI comparisons resolve
+the earlier false precursor mismatches, and the full n5 reference index passes.
+The [new composite release](docs/COHORT_RELEASE.md) is public and verified:
+primary 3,185 rules / 4,232 pairs; patent-disjoint
+2,322 rules / 2,988 pairs, plus all three frozen splits.
 
 This is an intentionally exposed planning benchmark. It is not a claim of
 unseen-molecule or unseen-reaction generalization. Both planning arms use the

@@ -2,7 +2,9 @@
 
 Run from Retrocomposite with `.venv` active. Production execution requires the
 refreshed, matching inputs and reviewed cohort audits. These commands create
-new destinations and never overwrite a split or training run.
+new destinations and never overwrite a split or training run. The published
+release already includes verified splits; use the [download and training
+commands](COHORT_RELEASE.md#download-and-train) to avoid regenerating them.
 
 ## Freeze splits under data/
 
@@ -19,11 +21,15 @@ retrocomposite split --assets data/cohorts/patent_disjoint \
 requested holdout are configurable implementation defaults; the final replication
 budget and validation policy still need to be frozen before production fitting.
 
-The default `--grouping route` creates connected components across canonical,
-stereo-free input molecules and **every supporting source route**. Identical
+The default `--grouping route` creates connected components across stereo-free
+Standard InChI identities and **every supporting source route**. Identical
 inputs stay together across rule labels; shared reactions or deduplicated pairs
 link all their source routes transitively. Single-step provenance is joined by
-product/rule and reaction indices, independently of the native policy-row order.
+native-product InChI/rule and reaction indices, independently of extraction order.
+When preparation normalized a native product, the preserved native row and exact
+normalization ledger establish its provenance; grouping still uses the exported
+training-input InChI. This handles two recorded keto/enol changes that Standard
+InChI does not merge without altering the frozen single-step dataset.
 Composite provenance comes from eligible n1 occurrence records only. Raw composite
 adapter exports and blocked cohorts are rejected.
 
@@ -130,3 +136,14 @@ weights are verified for inference loading; resuming optimizer/trainer state is
 not implemented. Full production fits, hybrid calibration, and planning remain
 separate steps. See the [training workflow](diagrams/training.md),
 [TODO](../TODO.md), and [open decisions](../QUESTIONS.md).
+
+New splits use schema version 2 and record full `molecule_inchi` values plus the
+[identity policy](MOLECULE_IDENTITY.md). Version-1 published splits still load
+with their original SMILES grouping; their rows are not silently reassigned.
+
+
+The new release also includes a regenerated baseline split under InChI identity.
+It has 51,642 training and 5,739 validation rows across 14,832 components, with
+zero molecule/route/group overlap. Its 9,236 rules without validation support
+remain a limitation. These are new assignments, even though partition sizes
+match the historical version-1 split; use the split bundled with the new release.

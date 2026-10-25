@@ -3,14 +3,18 @@
 from collections import Counter, defaultdict
 from contextlib import ExitStack
 from dataclasses import dataclass, field
+from importlib.metadata import version
 from pathlib import Path
+import json
 import re
 
 from retrocomposite import preparation as prep
+from retrocomposite.identity import identity_metadata, molecule_identity
 from retrocomposite.segments import Segment, adjacent_paths, node_at, ordered_paths
 
-POLICY = "retrocomposite-cohort-selection/1"
-SEGMENT_POLICY = "full-mapped-reaction-pair-with-all-intermediate-alignments/1"
+POLICY = "retrocomposite-cohort-selection/3"
+SEGMENT_POLICY = "ordered-stereo-free-inchi-reaction-pair/1"
+GRAPH_AUDIT_POLICY = "full-mapped-reaction-pair-with-all-intermediate-alignments/2"
 PATENT_POLICY = "paroutes-document-identifiers-including-legacy-us-reissue-sir/2"
 
 
@@ -111,18 +115,18 @@ def build_reference_index(routes_path, max_alignments, progress=None):
         try:
             if root.get("type") != "mol":
                 raise ValueError("Route root is not a molecule")
-            key = prep.molecule_key(molecule_node_smiles(root))
+            key = molecule_identity(molecule_node_smiles(root))
             index.targets[key].append(source)
             for path, node in walk_route_nodes(root):
                 if node.get("type") == "mol" and (not path or node.get("children")):
-                    key = prep.molecule_key(molecule_node_smiles(node))
+                    key = molecule_identity(molecule_node_smiles(node))
                     index.inputs[key].append({**source, "node_path": path})
             for first, second in adjacent_paths(root):
                 pair_witness = {**source, "reaction_node_paths": [first, second]}
                 segment = Segment.from_route(
                     root, first, second, pair_witness, max_alignments
                 )
-                index.segments[segment.context].append(segment)
+                index.segments[segment.signature].append(segment)
         except (ValueError, TypeError, KeyError, IndexError) as exc:
             index.errors.append({**source, "error": str(exc)})
     if not seen:
@@ -149,13 +153,13 @@ def assess_occurrence(
     reasons = audit["exclusions"]
     # Compute E1/E2 independently of E3 so every known reason survives.
     try:
-        key = prep.molecule_key(molecule_node_smiles(root))
+        key = molecule_identity(molecule_node_smiles(root))
         if key in index.targets:
             reasons["E1_SHARED_FINAL_TARGET"] = index.targets[key]
     except (ValueError, TypeError, KeyError) as exc:
         audit["errors"].append({"check": "E1", "error": str(exc)})
     try:
-        key = prep.molecule_key(record["product_smiles"])
+        key = molecule_identity(record["product_smiles"])
         if key in index.inputs:
             reasons["E2_SHARED_MOTIF_INPUT"] = index.inputs[key]
     except (ValueError, TypeError, KeyError) as exc:
@@ -176,10 +180,10 @@ def assess_occurrence(
         ):
             raise ValueError("Occurrence, composite and exact variant IDs are required")
         paths = ordered_paths(provenance["selected_reaction_node_paths"])
-        motif_key = prep.molecule_key(
+        motif_key = molecule_identity(
             molecule_node_smiles(node_at(root, paths[0][:-1]))
         )
-        if motif_key != checked["product_smiles"]:
+        if motif_key != molecule_identity(checked["product_smiles"]):
             raise ValueError("Motif input differs from the selected route occurrence")
         for first, second in zip(paths, paths[1:]):
             try:
@@ -190,25 +194,17 @@ def assess_occurrence(
                     witness("n1", route_id, reaction_node_paths=[first, second]),
                     max_alignments,
                 )
-                for reference in index.segments.get(segment.context, []):
-                    try:
-                        if segment.equivalent_to(reference):
-                            reasons.setdefault("E3_SHARED_CONCRETE_SEGMENT", []).append(
-                                {
-                                    "n1_reaction_node_paths": [first, second],
-                                    "n5": reference.witness,
-                                }
-                            )
-                    except (
-                        ValueError,
-                        TypeError,
-                        KeyError,
-                        IndexError,
-                        RecursionError,
-                    ) as exc:
-                        audit["errors"].append(
-                            {"check": "E3", "n5": reference.witness, "error": str(exc)}
-                        )
+                for reference in index.segments.get(segment.signature, []):
+                    # Signature equality is sufficient. Exact graph differences or
+                    # unresolved audits cannot rescue an overlapping occurrence.
+                    reasons.setdefault("E3_SHARED_CONCRETE_SEGMENT", []).append(
+                        {
+                            "n1_reaction_node_paths": [first, second],
+                            "n5": reference.witness,
+                            "reaction_signature": segment.signature,
+                            "exact_graph_audit": segment.audit_graph_match(reference),
+                        }
+                    )
             except (ValueError, TypeError, KeyError, IndexError) as exc:
                 audit["errors"].append(
                     {
@@ -431,8 +427,11 @@ def select_cohorts(
         prep.write_jsonl(
             out / "n5_segment_index.jsonl",
             (
-                {"context": context, "witnesses": [s.witness for s in values]}
-                for context, values in sorted(index.segments.items())
+                {
+                    "reaction_signature": signature,
+                    "witnesses": [s.witness for s in values],
+                }
+                for signature, values in sorted(index.segments.items())
             ),
         )
         cohorts = {
@@ -450,10 +449,28 @@ def select_cohorts(
         report = {
             "schema": POLICY,
             "segment_identity": SEGMENT_POLICY,
-            "molecule_identity": "canonical stereo-free; charge/isotope retained; atom maps ignored",
+            "molecule_identity": identity_metadata(),
             "patent_identity": "PaRoutes original reaction IDs; uppercase; remove whitespace/slash/hyphen; retain kind code",
             "patent_identity_policy": PATENT_POLICY,
             "max_alignments": max_alignments,
+            "exact_graph_audit": {
+                "policy": GRAPH_AUDIT_POLICY,
+                "matcher": "NetworkX VF2 with complete atom and bond labels",
+                "networkx_version": version("networkx"),
+                "affects_eligibility": False,
+                "scope": "Every E3 signature-match witness; repeated witnesses count per occurrence/variant link",
+                "status_counts": dict(
+                    sorted(
+                        Counter(
+                            match["exact_graph_audit"]["status"]
+                            for audit in audits
+                            for match in audit["exclusions"].get(
+                                "E3_SHARED_CONCRETE_SEGMENT", []
+                            )
+                        ).items()
+                    )
+                ),
+            },
             "shared_tactic_count": len(shared),
             "libraries": library_metadata or {},
             "cohorts": cohorts,
@@ -489,7 +506,7 @@ def select_cohorts(
             "n5_reference_errors": len(index.errors),
             "n5_patent_incomplete_routes": len(index.patent_incomplete),
             "unchanged_inputs": ["single-step n1+n5 corpus", "union leaf stock"],
-            "e3_coverage": "All adjacent pairs in all n5 routes; any exact repeated segment of length >=2 contains a matching pair",
+            "e3_coverage": "All adjacent ordered InChI reaction pairs in all n5 routes; any repeated sequence of length >=2 contains a matching pair",
             "reagent_policy": "Compare full participating reactants/products; ignore reaction middle-field reagents",
         }
         prep.write_json(out / "selection.json", report)
@@ -503,6 +520,7 @@ def select_cohorts(
                 for p in (
                     Path(__file__),
                     Path(__file__).with_name("segments.py"),
+                    Path(__file__).with_name("identity.py"),
                     Path(prep.__file__),
                 )
             },
@@ -604,6 +622,18 @@ def select_from_libraries(
             }
             for dataset, ref, es in zip(("n1", "n5"), refs, entries)
         }
+        composite_manifest = json.loads((n1_composites / "manifest.json").read_text())
+        metadata["n1_composites"] = {
+            key: composite_manifest[key]
+            for key in (
+                "library_id",
+                "library_format_version",
+                "source_reference_library_id",
+                "source_routes_sha256",
+                "statistics",
+            )
+        }
+        metadata["n1_composites"]["selected_kind"] = "rrseq_cons"
         return select_cohorts(
             n1_routes,
             n5_routes,

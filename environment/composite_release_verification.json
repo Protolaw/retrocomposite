@@ -1,0 +1,213 @@
+{
+  "all_downloaded_file_hashes_verified": true,
+  "all_output_hashes_verified": true,
+  "anonymous_download_verified": true,
+  "cohorts": {
+    "patent_disjoint": {
+      "dropped_shared_tactics": 3576,
+      "n5_covered_occurrences": 6142,
+      "n5_covered_routes": 4311,
+      "occurrences": 2996,
+      "rules": 2322,
+      "status": "ready",
+      "tactics": 1663,
+      "training_pairs": 2988,
+      "variants": 2322
+    },
+    "primary": {
+      "dropped_shared_tactics": 3018,
+      "n5_covered_occurrences": 7283,
+      "n5_covered_routes": 4890,
+      "occurrences": 4243,
+      "rules": 3185,
+      "status": "ready",
+      "tactics": 2221,
+      "training_pairs": 4232,
+      "variants": 3185
+    }
+  },
+  "composite_molecule_graphs": {
+    "patent_disjoint": {
+      "dropped_rows": 0,
+      "preserved_order_and_labels": true,
+      "rows": 2988
+    },
+    "primary": {
+      "dropped_rows": 0,
+      "preserved_order_and_labels": true,
+      "rows": 4232
+    }
+  },
+  "corrects": "audits/n1-n5-input-readiness-v1: the three reported precursor mismatches were Retrocomposite comparison false positives, not source-edge errors",
+  "eligibility_error_review": {
+    "cause": "Existing model-input canonicalization changes a keto/enol tautomer not merged by Standard InChI",
+    "dataset_id": "n1",
+    "e3_assessment": "Not completed for this invalid prepared input; absence of an E3 reason is not a negative E3 finding",
+    "exclusions": [
+      "E1_SHARED_FINAL_TARGET",
+      "E2_SHARED_MOTIF_INPUT"
+    ],
+    "included_in_training": false,
+    "prepared_model_input_inchi_differs": true,
+    "primary_status": "excluded",
+    "recorded_route_and_library_motif_inputs_agree": true,
+    "route_id": "434",
+    "sensitivity_status": "excluded"
+  },
+  "exact_graph_audit": {
+    "affects_eligibility": false,
+    "matcher": "NetworkX VF2 with complete atom and bond labels",
+    "networkx_version": "3.7",
+    "policy": "full-mapped-reaction-pair-with-all-intermediate-alignments/2",
+    "scope": "Every E3 signature-match witness; repeated witnesses count per occurrence/variant link",
+    "status_counts": {
+      "different": 1,
+      "match": 7098
+    }
+  },
+  "implementation_hashes": {
+    "identity.py": "373e417ec6647a82879f9377845a5fd555cfba89eeaa89fbab1dc096139f5b2a",
+    "preparation.py": "8869efc339f5a0e40ff718abccc79f3a6ab50c2c94e43a14353be55ecd02beb6",
+    "segments.py": "d2c93d73190a062c1efec1de632a940bfcbebaf91b9c45411a947c24727360ad",
+    "selection.py": "608017f8a6aede5aa1f9a43ae4ed6026a9542ba363aee1b6c1265618894ac0d4"
+  },
+  "independently_rechecked_primary_links": 4243,
+  "links_with_errors": 1,
+  "local_release": "data/releases/n1-n5-composites-inchi-v1",
+  "molecule_identity": {
+    "chython_synplan_version": "1.108",
+    "identifier": "full Standard InChI",
+    "ignore_stereo": true,
+    "libinchi_binary": "libinchi_arm64.dylib",
+    "libinchi_sha256": "956d0d4c97ebca1cdf04157585897b638a153c21d5d3df6272126d4a3800846b",
+    "policy": "chython-standard-inchi-stereo-free/1",
+    "tautomer_policy": "Standard InChI mobile-H normalization"
+  },
+  "n5_index": {
+    "adjacent_pairs": 28958,
+    "nonterminal_inputs": 36223,
+    "routes": 10000,
+    "targets": 9999,
+    "unique_signatures": 27643
+  },
+  "n5_reference_errors": 0,
+  "occurrence_links": 13121,
+  "primary_status_counts": {
+    "eligible": 4243,
+    "excluded": 8878
+  },
+  "reason_combinations": {
+    "E1_SHARED_FINAL_TARGET": 1,
+    "E1_SHARED_FINAL_TARGET|E2_SHARED_MOTIF_INPUT": 13,
+    "E1_SHARED_FINAL_TARGET|E2_SHARED_MOTIF_INPUT|E3_SHARED_CONCRETE_SEGMENT": 3648,
+    "E1_SHARED_FINAL_TARGET|E2_SHARED_MOTIF_INPUT|E3_SHARED_CONCRETE_SEGMENT|NOT_SHARED_TACTIC": 9,
+    "E1_SHARED_FINAL_TARGET|E2_SHARED_MOTIF_INPUT|NOT_SHARED_TACTIC": 13,
+    "E2_SHARED_MOTIF_INPUT": 34,
+    "E2_SHARED_MOTIF_INPUT|E3_SHARED_CONCRETE_SEGMENT": 758,
+    "E2_SHARED_MOTIF_INPUT|E3_SHARED_CONCRETE_SEGMENT|NOT_SHARED_TACTIC": 9,
+    "E2_SHARED_MOTIF_INPUT|NOT_SHARED_TACTIC": 15,
+    "E3_SHARED_CONCRETE_SEGMENT": 112,
+    "E3_SHARED_CONCRETE_SEGMENT|NOT_SHARED_TACTIC": 143,
+    "NONE": 4243,
+    "NOT_SHARED_TACTIC": 4123
+  },
+  "reason_counts": {
+    "E1_SHARED_FINAL_TARGET": 3684,
+    "E2_SHARED_MOTIF_INPUT": 4499,
+    "E3_SHARED_CONCRETE_SEGMENT": 4679,
+    "NOT_SHARED_TACTIC": 4312
+  },
+  "release": {
+    "file_count": 62,
+    "release": "n1-n5-composites-inchi-v1",
+    "repo_id": "Protolaw/retrocomposite-data",
+    "repo_type": "dataset",
+    "revision": "e4e575d7a9e066eca65f43fc3fde5b905b0cf309",
+    "url": "https://huggingface.co/datasets/Protolaw/retrocomposite-data/commit/e4e575d7a9e066eca65f43fc3fde5b905b0cf309"
+  },
+  "relocated_splits_verified": {
+    "patent_disjoint": {
+      "rows": 2988,
+      "status": "ready",
+      "train_rows": 2689,
+      "validation_rows": 299
+    },
+    "primary": {
+      "rows": 4232,
+      "status": "ready",
+      "train_rows": 3809,
+      "validation_rows": 423
+    },
+    "single_step": {
+      "rows": 57381,
+      "status": "ready",
+      "train_rows": 51642,
+      "validation_rows": 5739
+    }
+  },
+  "schema": "retrocomposite-composite-release-verification/1",
+  "segment_identity": "ordered-stereo-free-inchi-reaction-pair/1",
+  "selection_manifest_sha256": "6eb8305855b81a4eb8ba6b144ae7390e259a8b3823516874dc32c8ff2fafd88d",
+  "selection_schema": "retrocomposite-cohort-selection/3",
+  "sensitivity_status_counts": {
+    "eligible": 2996,
+    "excluded": 10125
+  },
+  "shared_tactic_count": 5239,
+  "single_step_stock_unchanged": true,
+  "splits": {
+    "patent_disjoint": {
+      "actual_validation_fraction": 0.1000669344042838,
+      "groups": 2245,
+      "largest_group_rows": 9,
+      "overlap": {
+        "groups": 0,
+        "molecules": 0,
+        "routes": 0
+      },
+      "rules_without_validation": 2089,
+      "seed": 42,
+      "status": "ready",
+      "train_rows": 2689,
+      "validation_rows": 299
+    },
+    "primary": {
+      "actual_validation_fraction": 0.09995274102079395,
+      "groups": 3133,
+      "largest_group_rows": 10,
+      "overlap": {
+        "groups": 0,
+        "molecules": 0,
+        "routes": 0
+      },
+      "rules_without_validation": 2867,
+      "seed": 42,
+      "status": "ready",
+      "train_rows": 3809,
+      "validation_rows": 423
+    },
+    "single_step": {
+      "actual_validation_fraction": 0.10001568463428662,
+      "groups": 14832,
+      "largest_group_rows": 54,
+      "overlap": {
+        "groups": 0,
+        "molecules": 0,
+        "routes": 0
+      },
+      "rules_without_validation": 9236,
+      "seed": 42,
+      "status": "ready",
+      "train_rows": 51642,
+      "validation_rows": 5739
+    }
+  },
+  "tests": {
+    "elapsed_seconds": 40.51,
+    "git_diff_check": "passed",
+    "passed": 80,
+    "ruff": "passed",
+    "warnings": 1
+  },
+  "unique_occurrences": 13121
+}

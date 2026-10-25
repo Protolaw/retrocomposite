@@ -1,5 +1,30 @@
 {
   "n1_composites": {
+    "library_id": "composite_library_6d9de6db0599ef7f0831b26b38c3904d5ac4ea8fc9725575b216512629acb820",
+    "manifest_sha256": "d96aa7aee6fa2b46b5f1296539c3dbccb6b810d7f0e69d59c33a549a8f621fb2",
+    "path": "outputs/composite_libraries/n1",
+    "selected_certified_links": 13121,
+    "selected_kind": "rrseq_cons",
+    "selection": "User-updated standalone identity-v3 n1 publication; branched links are not selected",
+    "source_reference_library_id": "reference_library_ea5c92d5d46c8b55427973118ef4baa426719a64ae605b3bab96607f0dfc742c",
+    "source_routes_sha256": "c1e396cd71228e3ab113412428571d223ef943835c3793f91b994b3341359439",
+    "statistics": {
+      "certified_link_count": 13445,
+      "composite_entry_count": 8552,
+      "constructions_seen": 14519,
+      "error_count": 1074,
+      "exact_variant_count": 11076,
+      "identity_canonical_variant_count": 11076,
+      "identity_exact_representation_variant_count": 0,
+      "identity_noncanonical_fallback_variant_count": 0,
+      "identity_version": 3,
+      "rrseq_cons_certified_link_count": 13121,
+      "rrseq_cons_route_count": 6907,
+      "rrsubtree_cons_certified_link_count": 324,
+      "rrsubtree_cons_route_count": 242
+    }
+  },
+  "previous_linear_composite_publication": {
     "command": "python -m route_inspector.cli build-composite-library --reference-library outputs/reference_libraries/n1 --routes-json data/clean/n1_routes.json --output-dir outputs/composite_libraries/n1-retrocomposite-v3-20261025 --kinds rrseq_cons --config route_inspector/configs/rule_extraction_functional_groups.yaml --ignore-errors --n-cpu 3 --memory-budget-mb 512 --no-single-step-overlap --progress-interval 250 --work-dir outputs/build_work/n1-retrocomposite-v3-20261025",
     "diagnostics_by_error_type": {
       "UncertifiedComposite": 1043

@@ -35,7 +35,12 @@ def parser():
     )
     for flag in ("n1", "n5", "n1-reference", "n5-reference", "n1-composites", "output"):
         command.add_argument("--" + flag, type=Path, required=True)
-    command.add_argument("--max-alignments", type=int, default=256)
+    command.add_argument(
+        "--max-alignments",
+        type=int,
+        default=256,
+        help="Intermediate alignment limit for exact graph auditing only; never changes E3 exclusion",
+    )
     command = subs.add_parser(
         "split",
         help="Freeze molecule/route grouped training and validation assignments",

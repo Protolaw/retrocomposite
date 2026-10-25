@@ -10,16 +10,16 @@ retrocomposite select-cohorts \
   --n5 ../route-inspector/data/clean/n5_routes.json \
   --n1-reference ../route-inspector/outputs/reference_libraries/n1 \
   --n5-reference ../route-inspector/outputs/reference_libraries/n5 \
-  --n1-composites ../route-inspector/outputs/composite_libraries/n1-retrocomposite-v3-20261025 \
-  --output data/cohorts
+  --n1-composites ../route-inspector/outputs/composite_libraries/n1 \
+  --output data/releases/n1-n5-composites-inchi-v1/cohorts
 ```
 
 The same arguments work with `python scripts/select_cohorts.py`. Paths above are
-the currently selected publications. The n1 identity-v3 library is built, but
-three n5 source inconsistencies currently block a complete E3 index. Resolve the
-[input-readiness findings](DATASET_READINESS.md) before rerunning full selection;
-the published input audit is not a completed occurrence-selection audit.
-The output directory
+the currently selected publications. The n1 identity-v3 library is built and
+the InChI-based n5 reference index passes all 10,000 routes. The original public
+input audit incorrectly attributed three comparison false positives to source
+inconsistency; see the [correction](MOLECULE_IDENTITY.md). Full occurrence
+selection and both cohort exports are complete; see [verified results](COHORT_RELEASE.md). The output directory
 must be new. The n1 composite publication must use identity version 3. Reference
 tactic identity has its own version namespace: both reference libraries must
 use compatible profiles and the same tactic identity version. All library
@@ -43,25 +43,38 @@ For every certified n1 occurrence/variant link, record all applicable reasons:
   consecutive n5 multistep segment, including one embedded inside a longer tactic.
 - **NOT_SHARED_TACTIC:** the abstract tactic is absent from the shared vocabulary.
 
-Molecular keys ignore stereo and atom-map numbering and retain isotope and charge.
+Molecular keys are full stereo-free Standard InChIs from Chython. They ignore
+atom maps, keep InChI charge/protonation and isotope layers, and normalize
+supported tautomers. See the versioned [identity policy](MOLECULE_IDENTITY.md).
 The n5 reference sets cover all cleaned evaluation routes, not only shared tactics.
 
-E3 indexes every adjacent pair in n5. This is exhaustive for the exclusion rule:
-every repeated segment of two or more consecutive reactions contains a repeated
-adjacent pair. A graph comparison preserves both full reaction sides, intermediate
-states, component membership, intra-reaction atom correspondence, and continuity
-between steps. All exact alignments of the intermediate are considered, including
-symmetry-related alignments. The two reactions may have independent atom-map
-namespaces. Participating reactants and their multiplicity are retained; middle-field
-reagents are ignored. This is exact comparison of the cleaned representation,
-not a tautomer or patent-family equivalence procedure.
+E3 indexes every adjacent pair in n5 using
+`ordered-stereo-free-inchi-reaction-pair/1`. Each reaction is represented by its
+product InChI and sorted **multiset** of all participating reactant InChIs.
+Duplicates remain in the tuple. Side roles and root-to-leaf reaction order are
+preserved; middle-field reagents are ignored. The selected intermediate is the
+second reaction's product and must connect the actual route nodes. Every repeated
+sequence of two or more reactions contains a repeated adjacent pair, so a pair
+match anywhere inside the candidate occurrence is sufficient for exclusion.
 
-`--max-alignments 256` is the default bound per pair. A truncated enumeration,
-invalid selected path, inconsistent route chemistry, or unresolved comparison
-is an audit error and cannot make a candidate eligible. If a definite exclusion
-is also known, the status is `excluded` and its errors remain recorded. Otherwise
-the status is `quarantined`. An incomplete n5 reference index blocks the entire
-primary cohort because absence of overlap can no longer be established.
+The stable reason code `E3_SHARED_CONCRETE_SEGMENT` now means equality under this
+signature policy. It does not require identical bond-state graphs or atom
+correspondence. This conservative definition also excludes supported tautomer
+variants and mapping variants with the same ordered molecular signatures.
+
+Exact graphs are retained **only for auditing** each signature-match witness:
+`exact_graph_audit.status` is `match`, `different`, or `unresolved`. The graph
+comparison uses exact NetworkX VF2 matching with every atom and bond label
+preserved. It preserves full reaction states and correspondence, enumerating all
+exact intermediate alignments up to `--max-alignments 256`. Truncation and graph
+comparison errors are recorded as unresolved diagnostics, never as a reason to
+retain or quarantine an already matching occurrence. Summary counts are per
+occurrence/variant-link witness, not unique chemical pairs.
+
+Invalid selected paths, inconsistent route chemistry, or failed InChI generation
+are eligibility errors. Known exclusions still give status `excluded`; otherwise
+the candidate is `quarantined`. An incomplete n5 signature index blocks the entire
+primary cohort because absence of overlap cannot be established.
 
 ## Patent-disjoint sensitivity cohort
 
@@ -87,10 +100,10 @@ the command does not silently shrink n5. Primary selection can still succeed.
 | --- | --- |
 | `selection.json` | Policy versions, configuration, cohort status, counts, coverage, exclusions and unresolved provenance totals. |
 | `shared_tactics.json` | Exact shared identities, n1/n5 entry membership, and n5 occurrence evidence used for coverage only. |
-| `occurrence_audit.jsonl` | Every certified n1 link's primary/sensitivity decision, all exclusion reasons, n5 witnesses, and comparison errors. |
+| `occurrence_audit.jsonl` | Every certified n1 link's primary/sensitivity decision, all exclusion reasons, n5 witnesses, graph diagnostics, and eligibility errors. |
 | `route_audit.jsonl` | Original source/route IDs, normalized and raw patent provenance, unresolved IDs, and shared-patent witnesses. |
 | `n5_molecule_index.jsonl` | Frozen target and model-input keys with occurrence witnesses. |
-| `n5_segment_index.jsonl` | Concrete adjacent-pair context and source paths; exact chemistry is reconstructible from hashed input files. |
+| `n5_segment_index.jsonl` | Ordered InChI reaction-pair signatures and source paths; exact chemistry is reconstructible from hashed input files. |
 | `reference_errors.jsonl` | n5 reference failures that prevent complete indexing. |
 | `preparation.json` | All input hashes, software versions, selector/comparator code hashes, and recursive output hashes. |
 | `primary/` and `patent_disjoint/` | Separately rebuilt eligible training assets and support manifests. |
@@ -128,7 +141,7 @@ never overwritten; do not consume a directory containing `INCOMPLETE`.
 
 Tests cover native identity matching, a real tiny certified-library-to-CLI run,
 whole-route/internal exclusions, embedded concrete segments, map/stereo
-invariance, atom correspondence differences, symmetry limits, support rebuilding,
+invariance, signature matches despite atom correspondence differences, audit-only symmetry limits, support rebuilding,
 patent ancestry, unknown provenance, deterministic output, and source mismatches.
 The synthetic transport fixtures are not claims about production data chemistry.
 

@@ -18,7 +18,7 @@ flowchart TD
     LEAVES["Actual cleaned n1+n5 terminal leaves"]
     STOCK["data/stock/<br/>Stereo-free union stock and planning targets"]
     SHARED["Shared linear tactic identities<br/>and certified n1 root/internal occurrences"]
-    REFERENCE["Frozen n5 roots, nonterminal inputs and concrete segments<br/>plus n1/n5 patent provenance"]
+    REFERENCE["Frozen n5 roots, nonterminal inputs and ordered reaction signatures<br/>plus n1/n5 patent provenance"]
     RI --> RELEASE --> CHECK
     CHECK --> REACTIONS --> SINGLE
     CHECK --> LEAVES --> STOCK
@@ -34,12 +34,13 @@ second diagram. Composite exclusions leave the single-step corpus and stock inta
 ```mermaid
 flowchart TD
     N1["Certified n1 occurrences of shared linear tactics"]
-    N5["Frozen n5 exclusion indexes"]
+    N5["Frozen n5 exclusion indexes<br/>Stereo-free InChI molecule identities"]
     READY{"Complete n5 E3 index?"}
     BLOCK["data/cohort_readiness/<br/>Publish input audit; no usable composite cohorts"]
     E1["E1: shared final target<br/>Exclude every occurrence in that n1 route"]
     E2["E2: shared n5 root/internal input<br/>Exclude the matching n1 occurrence"]
-    E3["E3: exact concrete n5 multistep segment<br/>Exclude occurrences containing matching segments"]
+    E3["E3: ordered InChI reaction-pair match<br/>Exclude occurrences containing matching segments"]
+    GRAPH["Exact graph audit of E3 matches<br/>match / different / unresolved; no eligibility effect"]
     PRIMARY["data/cohorts/primary/<br/>Rebuild eligible pairs, variants, decompositions and counts"]
     PATENTS["n1/n5 patent provenance"]
     PATENT["Additional patent exclusion<br/>Shared or unknown n1 IDs excluded; missing n5 IDs block"]
@@ -57,22 +58,23 @@ flowchart TD
     PATENTS --> PATENT
     E1 -.-> AUDIT
     E2 -.-> AUDIT
-    E3 -.-> AUDIT
+    E3 -.-> GRAPH -.-> AUDIT
     PATENT -.-> AUDIT
     PRIMARY -.-> AUDIT
     SENS -.-> AUDIT
 ```
 
 Evaluate all three predicates for audit purposes; the sequence does not discard
-later reasons after the first match. Quarantine unresolved comparisons. Abstract
-tactic overlap alone is not E3; an exact concrete n5 segment embedded within a
-larger n1 occurrence also triggers E3. Rebuild all composite-derived support using
+later reasons after the first match. Quarantine unresolved eligibility checks. Graph audit failures are diagnostic only.
+Abstract tactic overlap alone is not E3; an ordered InChI reaction-pair match
+embedded within a larger n1 occurrence also triggers E3. Rebuild all composite-derived support using
 only retained n1 occurrences, drop unsupported tactics, and report lost n5 coverage.
 Incomplete n5 comparison indexes block both cohorts; unresolved n5 patent
 provenance additionally blocks the sensitivity cohort. Blocked cohorts have no
-trainable assets. The current three n5 source inconsistencies and their complete
-patent provenance are published separately under `data/cohort_readiness/`; full
-occurrence filtering remains pending. See [readiness](../DATASET_READINESS.md).
+trainable assets. The earlier three n5 mismatch findings were false positives; the InChI-based
+reference audit under `data/cohort_readiness_inchi/` passes all 10,000 routes.
+The new public release contains full occurrence filtering and supersedes the historical
+source-error diagnosis; see [cohort results](../COHORT_RELEASE.md). See [readiness](../DATASET_READINESS.md).
 
 All preparation products remain under [data/](../../data/README.md). Next:
 [training](training.md).

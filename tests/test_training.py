@@ -274,3 +274,40 @@ def test_failed_training_keeps_error_manifest_and_console_log(cohort, tmp_path):
         train(split, config, output, 17)
     assert json.loads((output / "run.json").read_text())["status"] == "failed"
     assert "Unsupported trainer overrides" in (output / "console.log").read_text()
+
+
+def test_native_join_keeps_provenance_across_non_inchi_equivalent_normalization(
+    tmp_path,
+):
+    from retrocomposite.identity import molecule_identity
+    from retrocomposite.splitting import single_step_sources
+
+    assert molecule_identity("C=CO") != molecule_identity("CC=O")
+    native = tmp_path / "single_step_policy_data.native.tsv"
+    native.write_text("product_smiles\trule_id\nC=CO\t0\nCC=O\t0\n")
+    rows = [{"product_smiles": "CC=O", "rule_id": "0"}] * 2
+    changes = [{"row_index": 0, "rule_id": 0, "original": "C=CO", "canonical": "CC=O"}]
+    prep.write_jsonl(tmp_path / "policy_product_normalization.jsonl", changes)
+    prep.write_jsonl(
+        tmp_path / "reaction_provenance.jsonl",
+        [
+            {
+                "input_index": 0,
+                "mapped": "C=CO>>C=CO",
+                "sources": [{"dataset": "n1", "route_id": "enol"}],
+            },
+            {
+                "input_index": 1,
+                "mapped": "CC=O>>CC=O",
+                "sources": [{"dataset": "n1", "route_id": "keto"}],
+            },
+        ],
+    )
+    rules = [{"reaction_indices": "0,1"}]
+    assert single_step_sources(tmp_path, rules, rows) == [
+        ['["n1","enol"]'],
+        ['["n1","keto"]'],
+    ]
+    prep.write_jsonl(tmp_path / "policy_product_normalization.jsonl", [])
+    with pytest.raises(ValueError, match="normalization ledger"):
+        single_step_sources(tmp_path, rules, rows)
