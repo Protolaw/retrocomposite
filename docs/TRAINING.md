@@ -116,7 +116,7 @@ come from the model configuration.
 | `metrics.json` | Metrics recomputed over the complete validation partition after reloading the best checkpoint through SynPlanner. |
 | `runtime_sources.json` | Exact installed SynPlanner training/model source-file hashes. |
 | `graph_alignment.json` | Policy-row versus graph-row alignment check, with missing row indices when conversion drops examples. |
-| `environment/` | Copies of the project source/dependency snapshots when available. |
+| `environment/` | Baseline source/dependency records plus the actual portable installation receipt and resolved dependency pins when available. |
 
 Loss and accuracy are weighted by actual batch size, including a partial last
 batch. Final metrics include sample-mean cross entropy, top-k accuracy for

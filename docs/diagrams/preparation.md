@@ -2,7 +2,7 @@
 
 Preparation is split into two diagrams: shared data preparation, then composite
 cohort filtering. The export and cohort-selection tools are implemented;
-production execution still awaits matching refreshed source publications.
+production inputs are the existing standalone cleaned n1/n5 files selected by the user.
 Library refreshing remains in RouteInspector. See [PLAN.md](../../PLAN.md#primary-occurrence-exclusions)
 for exact exclusions and [preparation commands](../PREPARATION.md) for adapters.
 
@@ -10,7 +10,7 @@ for exact exclusions and [preparation commands](../PREPARATION.md) for adapters.
 
 ```mermaid
 flowchart TD
-    RI["RouteInspector: refresh corrected n1/n5 publications"]
+    RI["RouteInspector: selected cleaned n1/n5 files<br/>Matching references and identity-v3 n1 composites"]
     RELEASE["Freeze cleaned routes, references and identity-v3 composites"]
     CHECK["Verify source hashes, identities, profiles and provenance"]
     REACTIONS["Cleaned n1+n5 reactions: remove stereo and deduplicate"]

@@ -241,6 +241,7 @@ def prepare_single_step(sources, destination, config_path, workers=1):
         manifest = json.loads(manifest_path.read_text())
         manifest["source_stereo_file"] = "single_step.stereo.jsonl"
         write_json(manifest_path, manifest)
+        normalization = normalize_policy_products(out / "single_step_policy_data.tsv")
         summary = validate_training_assets(out / "single_step.tsv")
         with (out / "single_step.tsv").open() as stream:
             retained = {
@@ -263,8 +264,54 @@ def prepare_single_step(sources, destination, config_path, workers=1):
             deduplication="stereo-free reactant/product multisets; reagents excluded",
             config=digest(config_path),
             workers=workers,
+            policy_product_normalization=normalization,
             **summary,
         )
+
+
+def normalize_policy_products(path):
+    """Align native product strings with the shared model/stock identity policy.
+
+    SynPlanner emits the parsed product spelling, which can still be Kekule or
+    otherwise unprepared for its own molecule encoder. Preserve the native rows
+    and a change ledger; keep row order, multiplicity, and rule IDs unchanged.
+    """
+    path = Path(path)
+    native = path.with_suffix(".native.tsv")
+    if native.exists():
+        raise FileExistsError(native)
+    path.rename(native)
+    changed = []
+    count = 0
+    with native.open(newline="") as source, path.open("w", newline="") as output:
+        reader = csv.DictReader(source, delimiter="\t")
+        if reader.fieldnames != ["product_smiles", "rule_id"]:
+            raise ValueError("Unexpected policy-data columns")
+        writer = csv.DictWriter(
+            output, fieldnames=reader.fieldnames, delimiter="\t", lineterminator="\n"
+        )
+        writer.writeheader()
+        for index, row in enumerate(reader):
+            original = row["product_smiles"]
+            canonical = molecule_key(original)
+            if canonical != original:
+                changed.append(
+                    {
+                        "row_index": index,
+                        "rule_id": int(row["rule_id"]),
+                        "original": original,
+                        "canonical": canonical,
+                    }
+                )
+            writer.writerow({**row, "product_smiles": canonical})
+            count += 1
+    write_jsonl(path.parent / "policy_product_normalization.jsonl", changed)
+    return {
+        "policy": "retrocomposite.molecule_key; same as stock and grouped splitting",
+        "rows": count,
+        "changed_rows": len(changed),
+        "native_rows": native.name,
+    }
 
 
 def validate_training_assets(rules_path):

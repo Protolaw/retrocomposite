@@ -23,15 +23,27 @@ release; transport tests do not establish chemistry certification of new data.
 - [x] Publish the project under the public Protolaw GitHub account.
 - [x] Create public Hugging Face repositories for datasets and model runs.
 - [x] Add versioned uploads and checksum-verified downloads with commit receipts.
+- [x] Bundle the exact 572 recorded RouteInspector/SynPlanner installation files,
+      retain upstream licenses, and verify archives and individual source hashes.
+- [x] Make setup default to the bundles and preserve baseline environment records;
+      save actual per-installation pins/platform with subsequent training runs.
+- [x] Audit available inputs and record the user's choice to use the existing
+      `data/clean/n1_routes.json` and `n5_routes.json` as the experiment source.
 - [ ] Publish the first reviewed production dataset release and record its commit.
 - [ ] Publish trained models with the matching dataset commit.
 - [ ] Verify the full environment on the destination machine, preserving source hashes.
 
 ## Upstream prerequisite (owned by RouteInspector)
 
-- [ ] Refreshed matching n1/n5 route/reference/composite publications are ready.
+- [x] Freeze the selected existing n1/n5 source hashes and verify their reference
+      libraries match those same files.
+- [ ] Build a separate identity-v3 linear n1 composite publication from the
+      selected source in RouteInspector; review all retained diagnostics.
 
 This is an input dependency only. Do not implement rebuilding in this project.
+The [readiness audit](docs/DATASET_READINESS.md) records exact evidence. Prepare
+and upload single-step/stock independently of the composite-library refresh.
+The alternative source-corrected merged release is not the selected input.
 
 ## Freeze experiment inputs
 

@@ -1,0 +1,32 @@
+{
+  "baseline_lock_sha256": "43f832afb19b5c7a7efb1194d65781612a1f1c308852738e90b881650fcc0347",
+  "date": "2026-10-25",
+  "imports_and_config": "passed",
+  "installed_packages": 172,
+  "machine": "arm64",
+  "other_platforms_tested": false,
+  "pip_check": "passed",
+  "platform": "macOS-15.7.1-arm64-arm-64bit",
+  "python": "3.12.15 | packaged by Anaconda, Inc. | (main, Oct  1 2026, 20:11:32) [Clang 20.1.8 ]",
+  "runtime_tls_excluded": true,
+  "schema": "retrocomposite-portability-verification/1",
+  "source_mode": "bundled",
+  "sources": {
+    "SynPlanner": {
+      "bundled_source_digest": "a78aae1bf2fd1475b85a4faa338eade4f7084324e26538ea25e89d81da8f0668",
+      "git_commit": "53ffed21794e829cd660b63effaaf4351e10cf95",
+      "source_digest": "a78aae1bf2fd1475b85a4faa338eade4f7084324e26538ea25e89d81da8f0668"
+    },
+    "route-inspector": {
+      "bundled_source_digest": "b4dafb635dd29f03d126d6b752f5f8b49dc91a647ae0262ca8b8f9ea6c8f99a4",
+      "git_commit": "f38f668a185801c37780f94db78fd76af1d4a122",
+      "source_digest": "5712e340baa44ef20aeb01e031d12903d72496f479d1b88f4b480f8b1e9f03b1"
+    }
+  },
+  "tests": {
+    "passed": 60,
+    "seconds": 73.7,
+    "warnings": 1
+  },
+  "version_differences": {}
+}

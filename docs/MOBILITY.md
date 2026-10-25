@@ -6,8 +6,9 @@
 | [HF: Protolaw/retrocomposite-data](https://huggingface.co/datasets/Protolaw/retrocomposite-data) | Prepared rules and corresponding training products, eligible composite cohorts, stock/targets, splits, and audits. |
 | [HF: Protolaw/retrocomposite-models](https://huggingface.co/Protolaw/retrocomposite-models) | Complete trained model runs, checkpoints, logs, and metrics. |
 
-The Hugging Face repositories start with introductory cards. Data releases await
-refreshed publications; model releases await training. All three repositories
+Production data use the existing standalone n1/n5 files selected on 2026-10-25.
+See [dataset readiness](DATASET_READINESS.md) for release contents and revisions.
+Model releases await training. All three repositories
 are public. Credentials stay in the local Hugging Face/GitHub authentication
 stores, outside the project.
 
@@ -98,32 +99,54 @@ their actual training inputs.
 
 ## Recreate the full training environment
 
-Artifact transfer and environment reconstruction are separate. The full stack
-still uses the recorded local-source versions of RouteInspector and SynPlanner:
+Clone this repository and use Python 3.12:
 
 ```sh
-git clone https://github.com/Laboratoire-de-Chemoinformatique/route-inspector.git ../route-inspector
-git -C ../route-inspector checkout f38f668a185801c37780f94db78fd76af1d4a122
-git clone https://github.com/Laboratoire-de-Chemoinformatique/SynPlanner.git ../SynPlanner
-git -C ../SynPlanner checkout 53ffed21794e829cd660b63effaaf4351e10cf95
-python3.12 scripts/setup_environment.py \
-  --route-inspector ../route-inspector --synplanner ../SynPlanner
+python3.12 scripts/setup_environment.py --verify-only
+python3.12 scripts/setup_environment.py
 source .venv/bin/activate
 python -m pytest -q
 ```
 
-`environment/sources.json` contains exact source-file hashes. The recorded
-RouteInspector snapshot includes a local change to `route_inspector/gui/screens.py`,
-so a clean checkout alone will not reproduce its complete source digest. For
-exact reconstruction, transfer the matching upstream source snapshot separately.
-Those upstream working-tree changes are not published in this repository.
+Setup reads `environment/source_snapshots/` by default. Its two compressed
+archives contain the 572 software/build files recorded in
+`environment/sources.json`: SynPlanner's package and scripts, RouteInspector's
+package, and their build metadata, README files, and MIT licenses. The recorded
+RouteInspector GUI edit is included. Total compressed size is about 1.5 MB.
+Two generated GUI TLS files (certificate and private key) captured by the old
+recursive inventory are excluded. `manifest.json` records their names/hashes and
+a separate bundled-content digest; every software file retains its original
+hash. No upstream clone or Git executable is needed for installation.
 
-If intentionally using the clean upstream checkouts or adapting to another
-platform, run setup with `--refresh-lock` to accept and record the new environment,
-then rerun the tests before production work. Keep the resulting environment
-records with model runs. This creates a new reproducibility baseline rather than
-claiming byte-identical reconstruction. Dependency pins were verified on the
-original machine; accelerator/platform reproducibility needs its own check.
+Before building, setup verifies both archive hashes, the complete file sets, and
+every recorded file hash. Extraction rejects unexpected paths, links, duplicate
+members, and modified files. The baseline `sources.json` and dependency lock
+remain unchanged. Dependencies still require package-index access; the source
+archives are not an offline wheelhouse.
+
+The default environment is `.venv`; use `--environment /path/to/new/venv` to
+choose another new location. Existing environments are never overwritten.
+Each successful installation saves `retrocomposite-environment.json` and
+`requirements.resolved.txt` inside that environment, including its platform,
+source digests, dependency mode, and actual installed versions. Training copies
+these alongside its baseline environment records.
+
+The baseline was recreated on macOS arm64 with all 172 installed package versions
+matching and package/import/configuration checks passing. Linux/CUDA portability
+still requires installation and hardware checks on that platform. Package pins
+constrain applicable dependencies; they do not make different accelerators
+numerically identical. If a different platform needs a deliberate dependency
+refresh, use `--refresh-lock` with a new environment. This preserves the exact
+source bundles, resolves dependencies without baseline constraints, and records
+the resulting versions only in the new environment. Review and test that new
+baseline before training.
+
+For maintainers, `scripts/source_snapshots.py` packages files from the recorded
+source locations and refuses modified files or an existing bundle destination.
+`--route-inspector` and `--synplanner` can explicitly select matching local
+sources for setup; both must be supplied, and the same file hashes are enforced.
+A future hybrid SynPlanner branch requires a deliberate new source receipt and
+bundle release, rather than `--refresh-lock` silently accepting code changes.
 
 The helper uses Hugging Face's official [upload API](https://huggingface.co/docs/huggingface_hub/en/guides/upload)
 and [revision-aware downloads](https://huggingface.co/docs/huggingface_hub/en/guides/download).

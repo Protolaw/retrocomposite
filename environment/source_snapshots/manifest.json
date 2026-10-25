@@ -1,0 +1,28 @@
+{
+  "schema": "retrocomposite-source-bundles/1",
+  "sources": {
+    "SynPlanner": {
+      "archive": "SynPlanner-a78aae1bf2fd1475.tar.gz",
+      "archive_sha256": "e9c27f0d1f326beb3215c0a2bc5586de217816cf4b1095c7f8497dab27ef7f47",
+      "bundled_source_digest": "a78aae1bf2fd1475b85a4faa338eade4f7084324e26538ea25e89d81da8f0668",
+      "excluded_runtime_files": {},
+      "file_count": 200,
+      "git_commit": "53ffed21794e829cd660b63effaaf4351e10cf95",
+      "size_bytes": 504012,
+      "source_digest": "a78aae1bf2fd1475b85a4faa338eade4f7084324e26538ea25e89d81da8f0668"
+    },
+    "route-inspector": {
+      "archive": "route-inspector-b4dafb635dd29f03.tar.gz",
+      "archive_sha256": "fafb269a925c154722e30ec28c33ec64a696aaf98247ebbdf8e08a1b587792e9",
+      "bundled_source_digest": "b4dafb635dd29f03d126d6b752f5f8b49dc91a647ae0262ca8b8f9ea6c8f99a4",
+      "excluded_runtime_files": {
+        "route_inspector/outputs/gui/tls/server.crt": "d1350261edac2dab69693b3f286f4d14ca62fd73f2ac21fb306b801c6cdd5b2f",
+        "route_inspector/outputs/gui/tls/server.key": "196b4666535933de5804dd77deb7c94b8310357c4f67d264cfcb495300d6290a"
+      },
+      "file_count": 372,
+      "git_commit": "f38f668a185801c37780f94db78fd76af1d4a122",
+      "size_bytes": 986935,
+      "source_digest": "5712e340baa44ef20aeb01e031d12903d72496f479d1b88f4b480f8b1e9f03b1"
+    }
+  }
+}

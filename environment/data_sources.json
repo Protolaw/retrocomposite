@@ -1,0 +1,81 @@
+{
+  "n1_composites": {
+    "command": "python -m route_inspector.cli build-composite-library --reference-library outputs/reference_libraries/n1 --routes-json data/clean/n1_routes.json --output-dir outputs/composite_libraries/n1-retrocomposite-v3-20261025 --kinds rrseq_cons --config route_inspector/configs/rule_extraction_functional_groups.yaml --ignore-errors --n-cpu 3 --memory-budget-mb 512 --no-single-step-overlap --progress-interval 250 --work-dir outputs/build_work/n1-retrocomposite-v3-20261025",
+    "diagnostics_by_error_type": {
+      "UncertifiedComposite": 1043
+    },
+    "library_id": "composite_library_d4d98805dd0a07a27b9e3330f0726695dddf67a55380d606150aa80cc52a8309",
+    "manifest_sha256": "6289250c6571bf01301724a3052e2c6361000a2c22f683c4238bb2ddf35843bd",
+    "path": "outputs/composite_libraries/n1-retrocomposite-v3-20261025",
+    "source_reference_library_id": "reference_library_ea5c92d5d46c8b55427973118ef4baa426719a64ae605b3bab96607f0dfc742c",
+    "source_routes_sha256": "c1e396cd71228e3ab113412428571d223ef943835c3793f91b994b3341359439",
+    "statistics": {
+      "certified_link_count": 13121,
+      "composite_entry_count": 8279,
+      "constructions_seen": 14164,
+      "error_count": 1043,
+      "exact_variant_count": 10764,
+      "identity_canonical_variant_count": 10764,
+      "identity_exact_representation_variant_count": 0,
+      "identity_noncanonical_fallback_variant_count": 0,
+      "identity_version": 3,
+      "ring_breaking": {
+        "annotated_occurrences": 13121,
+        "counts": {
+          "all": {
+            "no": 10595,
+            "unknown": 2,
+            "yes": 2524
+          },
+          "rrseq_cons": {
+            "no": 10595,
+            "unknown": 2,
+            "yes": 2524
+          },
+          "rrsubtree_cons": {
+            "no": 0,
+            "unknown": 0,
+            "yes": 0
+          }
+        }
+      },
+      "rrseq_cons_certified_link_count": 13121,
+      "rrseq_cons_route_count": 6907,
+      "rrsubtree_cons_certified_link_count": 0,
+      "rrsubtree_cons_route_count": 0
+    }
+  },
+  "references": {
+    "n1": {
+      "configuration_fingerprint": "1c84546d1fe124fe6727b03834ffe1a5442ec09989af8b129b21cb172bc6d981",
+      "input_sha256": "c1e396cd71228e3ab113412428571d223ef943835c3793f91b994b3341359439",
+      "library_id": "reference_library_ea5c92d5d46c8b55427973118ef4baa426719a64ae605b3bab96607f0dfc742c",
+      "manifest_sha256": "0c0a7d689d8716cd1c6d7b3ab2c9935562186e5a0ccca965fc4fe1abfca1589f",
+      "path": "outputs/reference_libraries/n1",
+      "tactic_identity_version": 4
+    },
+    "n5": {
+      "configuration_fingerprint": "1c84546d1fe124fe6727b03834ffe1a5442ec09989af8b129b21cb172bc6d981",
+      "input_sha256": "5a27be2e0199f2bacd66556122f50906a24e27946bb30b1d9472d55d725e71af",
+      "library_id": "reference_library_55634a4c02c4fa307ba069176e12264cc1ee8195d34794a1a890ba15ada44c7c",
+      "manifest_sha256": "748833665b9d46f6f8474b749c3f54b4bed0469c7e9f16a638947ba4ea5f8ecf",
+      "path": "outputs/reference_libraries/n5",
+      "tactic_identity_version": 4
+    }
+  },
+  "schema": "retrocomposite-input-release/1",
+  "selected_on": "2026-10-25",
+  "selection": "User selected existing route-inspector/data/clean/n1_routes.json and n5_routes.json",
+  "sources": {
+    "n1": {
+      "path": "data/clean/n1_routes.json",
+      "routes": 10000,
+      "sha256": "c1e396cd71228e3ab113412428571d223ef943835c3793f91b994b3341359439"
+    },
+    "n5": {
+      "path": "data/clean/n5_routes.json",
+      "routes": 10000,
+      "sha256": "5a27be2e0199f2bacd66556122f50906a24e27946bb30b1d9472d55d725e71af"
+    }
+  }
+}

@@ -55,6 +55,11 @@ def train(
         for name in ("sources.json", "requirements.lock.txt")
         if (environment / name).is_file()
     ]
+    environment_files += [
+        Path(sys.prefix) / name
+        for name in ("retrocomposite-environment.json", "requirements.resolved.txt")
+        if (Path(sys.prefix) / name).is_file()
+    ]
     source_files += prep.inputs(environment_files)
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite {output}")

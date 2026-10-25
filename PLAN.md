@@ -37,8 +37,12 @@ policy instead of describing the entire experiment as leakage-free.
   existing RouteInspector and SynPlanner repositories.
 - New isolated environment with RouteInspector and the full `SynPlanner[all]`
   dependency set. Pin installed dependencies and record source content/revisions.
-- Rebuild standalone n1/n5 libraries in RouteInspector against the corrected
-  source release and composite identity version 3. No rebuilding code here.
+  Bundle the exact installation sources in Git, including recorded working-tree
+  changes, so reconstruction does not require either original checkout.
+- Use the existing `route-inspector/data/clean/n1_routes.json` and
+  `n5_routes.json` selected by the user on 2026-10-25. Match libraries to those
+  exact source hashes and require composite identity version 3. Library
+  construction stays in RouteInspector; no rebuilding code here.
 - Extract a single-step vocabulary and standard `*_policy_data.tsv` from
   cleaned n1+n5 reactions.
 - MHN ranking architecture; `query_cgr_graph` rule encoding; GPS molecule
@@ -82,10 +86,19 @@ before producing production training assets. Check file hashes, library IDs,
 processing profiles, and composite identity versions. Reject version-2
 composite publications rather than silently treating them as refreshed.
 
+Single-step and stock preparation need the selected n1/n5 JSONs, but do not
+depend on composite libraries. They may be published as an explicitly partial
+release once those source hashes are verified. See the current
+[input-readiness audit](docs/DATASET_READINESS.md) for the chosen source files
+and composite prerequisites.
+
 The earlier corrected merged audit recorded 2,127 duplicate routes and 2,146
 shared-target pairs. Those numbers are descriptive of that release, not
 guaranteed counts for refreshed standalone publications. Recompute overlap
-after refresh. Do not mix the older standalone hashes with the merged release.
+for the selected standalone source release. Do not mix its hashes with the
+alternative merged release. The selected source hashes start with `c1e396cd`
+(n1) and `5a27be2e` (n5), rather than `9902ff12` and `fb8bf966` in the merged
+publication's source ledger.
 
 Every generated asset receives a manifest with input hashes, configuration,
 software versions, and output hashes. Preserve dataset, route, reaction-node

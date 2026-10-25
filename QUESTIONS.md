@@ -2,14 +2,14 @@
 
 Updated: 2026-10-25. Confirmed choices are in PLAN.md; do not ask them again.
 
-## Before production data preparation
+## Input choice resolved
 
-1. **Which refreshed n1/n5 files and publications are authoritative?** Provide
-   matching cleaned JSON, reference libraries, and identity-v3 composite
-   libraries. Rebuilding stays in RouteInspector. The selector consumes both
-   reference libraries and the n1 composite library; n5 composites are not
-   needed for overlap selection. Review the reported patent-ID coverage before
-   treating the sensitivity cohort as usable.
+Use the existing `route-inspector/data/clean/n1_routes.json` and `n5_routes.json`,
+as explicitly selected on 2026-10-25. Their hashes begin `c1e396cd` and `5a27be2e`.
+The alternate missing `source_corrected_20261021` files are not a prerequisite.
+Both existing reference libraries match the selected files. Build the required
+identity-v3 n1 composite publication in RouteInspector; n5 composite rules are
+not needed for overlap selection. See [readiness](docs/DATASET_READINESS.md).
 
 ## Before training and hybrid planning
 

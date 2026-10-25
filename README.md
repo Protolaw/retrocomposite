@@ -64,17 +64,21 @@ and the source snapshots needed to recreate the training environment.
 Use Python 3.12 for the initial local environment:
 
 ```sh
-python scripts/setup_environment.py --route-inspector ../route-inspector --synplanner ../SynPlanner
+python3.12 scripts/setup_environment.py
 source .venv/bin/activate
 retrocomposite --help
 python -m pytest -q
 ```
 
-The setup installs the complete `SynPlanner[all]` dependency set from the local
-SynPlanner source snapshot and RouteInspector from its local source snapshot.
+The setup installs the complete `SynPlanner[all]` dependency set and RouteInspector
+from the exact source archives committed under `environment/source_snapshots/`.
+No separate upstream checkout is needed. Setup verifies archive and individual
+file hashes, including the recorded local RouteInspector GUI change.
 RouteInspector currently pins a different SynPlanner Git revision. Setup
-explicitly overrides only that dependency, records source hashes/revisions,
-installs its other dependencies, and checks package consistency. Existing
+explicitly overrides only that dependency, constrains other dependencies to the
+saved pins, and checks package consistency. Each new environment records its
+actual installed versions and platform in `retrocomposite-environment.json`.
+Existing
 environments and source repositories are not changed. Source edits require
 reinstallation; this environment does not silently follow editable upstream code.
 
@@ -82,3 +86,8 @@ Library reconstruction belongs to RouteInspector. This repository consumes its
 refreshed publications; it does not contain a library rebuilding workflow.
 Hybrid-policy implementation belongs on a future SynPlanner branch. No training,
 full corpus extraction, or planning is run by setup.
+
+The chosen dataset inputs, exact hashes, and preparation status are in
+[dataset readiness](docs/DATASET_READINESS.md). Hugging Face repositories are
+accessible. The selected files are the existing standalone `data/clean/` files,
+as confirmed by the user on 2026-10-25.

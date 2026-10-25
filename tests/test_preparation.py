@@ -13,6 +13,7 @@ from retrocomposite.preparation import (
     inputs,
     library_records,
     molecule_key,
+    normalize_policy_products,
     prepare_single_step,
     prepare_stock,
     read_records,
@@ -105,6 +106,27 @@ def test_single_step_native_extraction_and_mapped_duplicate(tmp_path):
     evidence = list(read_records(out / "reaction_provenance.jsonl"))
     assert {s["dataset"] for s in evidence[0]["sources"]} == {"n1", "n5"}
     assert validate_training_assets(out / "single_step.tsv")["rule_count"] >= 1
+
+
+def test_native_policy_normalization_preserves_labels_rows_and_evidence(tmp_path):
+    import csv
+
+    path = tmp_path / "single_step_policy_data.tsv"
+    original = "product_smiles\trule_id\nC1=CC=CC=C1\t7\n[CH3:1][OH:2]\t3\nCCO\t3\n"
+    path.write_text(original)
+    summary = normalize_policy_products(path)
+    assert summary["rows"] == 3
+    assert summary["changed_rows"] == 2
+    assert path.with_suffix(".native.tsv").read_text() == original
+    with path.open() as stream:
+        rows = list(csv.DictReader(stream, delimiter="\t"))
+    assert [r["rule_id"] for r in rows] == ["7", "3", "3"]
+    assert [r["product_smiles"] for r in rows] == [
+        molecule_key(s) for s in ["C1=CC=CC=C1", "[CH3:1][OH:2]", "CCO"]
+    ]
+    assert all(molecule_key(r["product_smiles"]) == r["product_smiles"] for r in rows)
+    changes = list(read_records(tmp_path / "policy_product_normalization.jsonl"))
+    assert [r["row_index"] for r in changes] == [0, 1]
 
 
 def test_composite_roundtrip_retains_occurrences_and_exact_variants(tmp_path):

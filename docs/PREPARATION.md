@@ -4,9 +4,11 @@ Workflow: [preparation diagram](diagrams/preparation.md). For the final
 experimental cohorts, use [shared-tactic selection](SELECTION.md).
 
 Run from the Retrocomposite project with `.venv` active. Inputs are read-only;
-each output directory must be new. Production commands should wait for the
-matching refreshed standalone publications. Paths below describe the expected
-layout and are not evidence that those publications have been refreshed.
+each output directory must be new. Use the existing standalone `data/clean/`
+files selected by the user on 2026-10-25, as recorded in
+[dataset readiness](DATASET_READINESS.md). Single-step and stock preparation are
+independent of composite-library construction; cohort selection requires the
+matching identity-v3 n1 composite publication.
 Save preparation artifacts and audits under [data/](../data/README.md).
 Training and later-stage results go under [outputs/](../outputs/README.md).
 
@@ -27,6 +29,10 @@ from the duplicate key, matching `keep_reagents: false`. Reactions must already
 be correctly mapped, preprocessed, and oriented as forward route reactions.
 Extraction errors stop publication. The extraction profile retains all rules
 with at least one unique supporting reaction; validate the retained coverage.
+
+Native product strings are normalized with the same identity function as stock
+and grouped splitting. Original policy rows and a row-level normalization audit
+are preserved; row order, multiplicity, and rule IDs remain unchanged.
 
 Outputs include `single_step.tsv`, `single_step_policy_data.tsv`, the native
 rule manifest, `reaction_provenance.jsonl`, and `preparation.json`. A successful
@@ -152,18 +158,21 @@ Full model training is not part of project setup.
 
 ## Environment reproducibility
 
-`scripts/setup_environment.py` creates a new `.venv`, copies package source
-files to temporary build directories, installs local `SynPlanner[all]`, installs
-RouteInspector while explicitly overriding its SynPlanner Git pin, and installs
-this project. It then runs `pip check`, checks imports/configuration, and writes
-`environment/sources.json` plus `environment/requirements.lock.txt`.
+`scripts/setup_environment.py` creates a new environment from the committed,
+hash-verified RouteInspector and SynPlanner installation-source archives. It
+installs `SynPlanner[all]`, overrides RouteInspector's SynPlanner Git pin with
+that exact bundled source, and constrains other dependencies to the saved pins.
+It verifies package consistency and imports/configuration. The original source
+receipt and lock stay unchanged; actual installation metadata is saved inside
+the new environment and copied into subsequent training runs.
 
-The source manifest includes exact copied-file hashes and upstream dirty status;
-a Git commit alone is insufficient when local changes are present. The dependency
-lock records the tested platform's installed versions, not a universal lock for
-all operating systems. Reproduction needs both those dependency pins and matching
-source snapshots. Review intentional upstream changes and recreate the environment
-when switching to the future hybrid branch; never silently upgrade a benchmark run.
-When saved environment metadata exists, setup checks the upstream source hashes
-and uses the saved dependency pins as installation constraints. A deliberate
-source/dependency refresh requires `--refresh-lock` and a new environment.
+See [mobility](MOBILITY.md) for reconstruction, source-only verification,
+per-platform dependency refresh, and Hugging Face transfers. The dependency pins
+were verified on macOS arm64; other platforms need their own installation and
+accelerator checks.
+
+Use `--workers 1` for single-step extraction with this pinned SynPlanner source.
+Its multiprocessing initializer cannot deserialize the functional-group query
+objects in this profile. Sequential extraction preserves the same chemistry and
+passes the native validation checks; the failed parallel attempt published no
+partial dataset.

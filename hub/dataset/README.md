@@ -16,8 +16,10 @@ Available releases will appear under `releases/`.
 Each release can contain the single-step rule vocabulary and corresponding
 product/rule training pairs, primary and patent-disjoint composite cohorts with
 their product/rule pairs and decomposition support, union stock, planning targets,
-frozen grouped splits, and audit manifests. Inputs are derived from corrected
-PaRoutes n1/n5 routes using RouteInspector and SynPlanner.
+frozen grouped splits, and audit manifests. Inputs are derived from the standalone cleaned PaRoutes n1/n5 files selected by
+the user on 2026-10-25, using RouteInspector and SynPlanner. Source SHA-256 hashes
+start with `c1e396cd` (n1) and `5a27be2e` (n5); these differ from the later merged
+publication's input release.
 
 Single-step supervision intentionally uses cleaned n1+n5 reactions. Composite
 supervision uses eligible n1 occurrences of linear tactics shared with n5, after
