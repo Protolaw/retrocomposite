@@ -100,12 +100,16 @@ their actual training inputs.
 
 ## Recreate the full training environment
 
-Clone this repository and use Python 3.12:
+Clone this repository and create the named Conda environment. The YAML selects
+Python 3.12 and pip; the setup script then installs the full pinned chemistry/ML
+stack from the verified source bundles:
 
 ```sh
-python3.12 scripts/setup_environment.py --verify-only
-python3.12 scripts/setup_environment.py
-source .venv/bin/activate
+conda env create -f environment/conda.yml --no-default-packages
+conda activate retrocomposite_env
+python scripts/setup_environment.py --verify-only
+python scripts/setup_environment.py --active-conda
+python -m ipykernel install --user --name retrocomposite_env --display-name "Python (retrocomposite_env)"
 python -m pytest -q
 ```
 
@@ -125,12 +129,27 @@ members, and modified files. The baseline `sources.json` and dependency lock
 remain unchanged. Dependencies still require package-index access; the source
 archives are not an offline wheelhouse.
 
-The default environment is `.venv`; use `--environment /path/to/new/venv` to
-choose another new location. Existing environments are never overwritten.
-Each successful installation saves `retrocomposite-environment.json` and
-`requirements.resolved.txt` inside that environment, including its platform,
-source digests, dependency mode, and actual installed versions. Training copies
-these alongside its baseline environment records.
+The standard environment is `retrocomposite_env`. Run installation with that
+Conda environment activated; `--active-conda` uses its Python directly and does
+not create a nested virtual environment. Base environments and mismatched Python
+interpreters are rejected. Re-running this explicit install command reapplies
+the recorded source bundles and dependency constraints to the active environment.
+Other environments, including the existing `.venv`, remain separate.
+
+The installer records `retrocomposite-environment.json`, `requirements.resolved.txt`,
+and `conda-packages.json` inside the Conda environment. These capture the actual
+Python version, platform, source digests, installed Python packages, and Conda
+package builds. The YAML is a portable bootstrap, not a cross-platform binary
+lock; use these receipts when comparing machines.
+
+After activation, launch `python -m jupyterlab notebooks/12_Rule_Analysis.ipynb`
+and choose **Python (retrocomposite_env)**. Re-register the kernel after recreating
+or moving the environment so its interpreter path stays correct.
+
+Standalone virtual environments are still supported: run
+`python3.12 scripts/setup_environment.py --environment /path/to/new/venv` without
+`--active-conda`. That mode refuses an existing destination. Training records
+both the baseline dependency lock and the active environment's resolved packages.
 
 The baseline was recreated on macOS arm64 with all 172 installed package versions
 matching and package/import/configuration checks passing; all 66 project tests
@@ -138,7 +157,8 @@ passed in that reconstructed environment. Linux/CUDA portability
 still requires installation and hardware checks on that platform. Package pins
 constrain applicable dependencies; they do not make different accelerators
 numerically identical. If a different platform needs a deliberate dependency
-refresh, use `--refresh-lock` with a new environment. This preserves the exact
+refresh, use `--refresh-lock` with a new environment (combine with
+`--active-conda` for Conda). This preserves the exact
 source bundles, resolves dependencies without baseline constraints, and records
 the resulting versions only in the new environment. Review and test that new
 baseline before training.

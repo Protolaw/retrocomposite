@@ -1,0 +1,10 @@
+# Bootstrap the interpreter, then install the verified chemistry/ML stack with:
+# conda activate retrocomposite_env
+# python scripts/setup_environment.py --active-conda
+name: retrocomposite_env
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - pip=25.0.1

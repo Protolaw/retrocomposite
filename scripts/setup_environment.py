@@ -1,11 +1,14 @@
 """Recreate the full environment using bundled, hash-verified source snapshots.
 
 Requires Python 3.12 and package-index access; no upstream checkout is needed.
+Use --active-conda after creating and activating environment/conda.yml, or
+omit it to create a standalone virtual environment.
 The baseline source receipt and dependency pins are never overwritten by setup.
 """
 
 import argparse
 import json
+import os
 from pathlib import Path
 import platform
 import re
@@ -23,10 +26,38 @@ def run(*args, **kwargs):
     subprocess.run([str(a) for a in args], check=True, **kwargs)
 
 
+def active_conda_environment():
+    """Require the active non-base Conda interpreter, never a nested venv."""
+    prefix = os.environ.get("CONDA_PREFIX")
+    if not prefix:
+        raise ValueError("Activate retrocomposite_env before using --active-conda")
+    environment = Path(prefix).resolve()
+    if environment != Path(sys.prefix).resolve() or sys.prefix != sys.base_prefix:
+        raise ValueError(
+            "Run this script with the activated Conda environment's Python"
+        )
+    if not (environment / "conda-meta").is_dir():
+        raise ValueError("The active interpreter is not in a Conda environment")
+    if (
+        os.environ.get("CONDA_DEFAULT_ENV") == "base"
+        or (environment / "condabin").exists()
+    ):
+        raise ValueError("Use a dedicated Conda environment, not base")
+    return environment
+
+
 def main():
     project = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--environment", type=Path, default=project / ".venv")
+    destination = parser.add_mutually_exclusive_group()
+    destination.add_argument(
+        "--environment", type=Path, help="New standalone venv path; default: .venv"
+    )
+    destination.add_argument(
+        "--active-conda",
+        action="store_true",
+        help="Install into the activated non-base Conda environment without creating a nested venv",
+    )
     parser.add_argument(
         "--verify-only",
         action="store_true",
@@ -50,10 +81,15 @@ def main():
     args = parser.parse_args()
     if bool(args.route_inspector) != bool(args.synplanner):
         parser.error("Supply both local source paths, or neither to use the bundles")
-    environment = args.environment.resolve()
+    environment = (args.environment or project / ".venv").resolve()
+    if args.active_conda and not args.verify_only:
+        try:
+            environment = active_conda_environment()
+        except ValueError as error:
+            parser.error(str(error))
     if not args.verify_only and sys.version_info[:2] != (3, 12):
         parser.error("Use Python 3.12 to recreate this recorded environment")
-    if not args.verify_only and environment.exists():
+    if not args.verify_only and not args.active_conda and environment.exists():
         raise FileExistsError(
             f"Existing environment will not be overwritten: {environment}"
         )
@@ -80,8 +116,11 @@ def main():
         )["project"]["dependencies"]
         override = [d for d in dependencies if re.match(r"(?i)^synplanner(?:\W|$)", d)]
         other_dependencies = [d for d in dependencies if d not in override]
-        python = environment / (
-            "Scripts/python.exe" if sys.platform == "win32" else "bin/python"
+        python = (
+            Path(sys.executable)
+            if args.active_conda
+            else environment
+            / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
         )
         uv = shutil.which("uv")
         installer = (
@@ -90,11 +129,14 @@ def main():
             else [python, "-m", "pip", "install"]
         )
         constraints = [] if args.refresh_lock else ["--constraint", lock]
-        venv.EnvBuilder(with_pip=True).create(environment)
+        if not args.active_conda:
+            venv.EnvBuilder(with_pip=True).create(environment)
         receipt_path = environment / "retrocomposite-environment.json"
         receipt = {
             "schema": "retrocomposite-environment/1",
             "status": "installing",
+            "environment_manager": "conda" if args.active_conda else "venv",
+            "environment_prefix": str(environment),
             "sources": {
                 name: {
                     key: value[key]
@@ -125,6 +167,8 @@ def main():
                 *other_dependencies,
                 "pytest>=8,<10",
                 "huggingface_hub>=1.0,<3",
+                "pip",
+                "setuptools",
             )
             # Replace only RouteInspector's SynPlanner Git pin with our verified source.
             run(*installer, "--no-deps", root / "route-inspector")
@@ -132,6 +176,22 @@ def main():
             run(python, "-m", "pip", "check")
             check = "from synplan.ml.config import PolicyNetworkConfig; c=PolicyNetworkConfig.from_yaml('configs/mhn_querycgr_gps.yaml'); assert c.embedder_type=='gps' and c.rule_embedding_type=='query_cgr_graph'; import route_inspector; import retrocomposite; import huggingface_hub; from retrocomposite.identity import molecule_identity; assert molecule_identity('CO').startswith('InChI=1S/'); print('Imports, Chython InChI and MHN configuration verified')"
             run(python, "-c", check, cwd=project)
+            if args.active_conda:
+                conda = os.environ.get("CONDA_EXE") or shutil.which("conda")
+                if not conda:
+                    raise RuntimeError(
+                        "Conda executable unavailable for the environment receipt"
+                    )
+                conda_packages = json.loads(
+                    subprocess.check_output(
+                        [conda, "list", "--prefix", str(environment), "--json"],
+                        text=True,
+                    )
+                )
+                (environment / "conda-packages.json").write_text(
+                    json.dumps(conda_packages, indent=2, sort_keys=True) + "\n"
+                )
+                receipt["conda_package_receipt"] = "conda-packages.json"
             receipt["installed"] = json.loads(
                 subprocess.check_output(
                     [str(python), "-m", "pip", "list", "--format=json"], text=True
