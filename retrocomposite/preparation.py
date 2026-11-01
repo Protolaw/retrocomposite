@@ -12,6 +12,8 @@ from pathlib import Path
 import tempfile
 
 
+COMPOSITE_RULE_ORDER = "popularity-descending-smarts-ascending/1"
+
 def digest(path):
     h = sha256()
     with Path(path).open("rb") as stream:
@@ -507,14 +509,30 @@ def check_composite_record(record):
     }
 
 
-def export_composites(records, destination, source_files):
+def export_composites(records, destination, source_files, *, merge_equivalent=True):
+    from retrocomposite.composite_identity import POLICY, mapped_rule_identity
+
+    # Keep original certified SMARTS in occurrence records. Only training labels
+    # use a deterministic representative; tactic/certificate evidence stays local.
+    checked_records = [check_composite_record(record) for record in records]
+    families = defaultdict(set)
+    identities = {}
+    for record in checked_records:
+        rule = record["composite_rule"]
+        identity = mapped_rule_identity(rule)
+        key = identity.encoding if merge_equivalent else rule
+        families[key].add(rule)
+        identities[rule] = identity
+    representative = {rule: min(variants) for variants in families.values() for rule in variants}
     grouped = defaultdict(list)
-    for record in records:
-        checked = check_composite_record(record)
-        grouped[(checked["composite_rule"], checked["product_smiles"])].append(checked)
+    for checked in checked_records:
+        rule = checked["composite_rule"]
+        grouped[(representative[rule], checked["product_smiles"])].append(checked)
     if not grouped:
         raise ValueError("No eligible linear composite records")
-    rules = sorted({r for r, _p in grouped})
+    # Count unique prepared product/rule pairs, not duplicate occurrences.
+    popularity = Counter(rule for rule, _product in grouped)
+    rules = sorted(popularity, key=lambda rule: (-popularity[rule], rule))
     ids = {rule: i for i, rule in enumerate(rules)}
     pairs = sorted(grouped, key=lambda key: (ids[key[0]], key[1]))
     with publication(destination) as out:
@@ -535,7 +553,8 @@ def export_composites(records, destination, source_files):
         write_jsonl(
             out / "composite_records.jsonl",
             (
-                {**r, "rule_id": ids[rule], "training_pair_index": i}
+                {**r, "rule_id": ids[rule], "training_pair_index": i,
+                 **({"training_rule_identity": identities[rule].id} if merge_equivalent else {})}
                 for i, (rule, product) in enumerate(pairs)
                 for r in sorted(
                     grouped[(rule, product)],
@@ -543,6 +562,27 @@ def export_composites(records, destination, source_files):
                 )
             ),
         )
+        if merge_equivalent:
+            mapping = []
+            for rule in rules:
+                evidence = [r for (representative_rule, _), rs in grouped.items()
+                            if representative_rule == rule for r in rs]
+                variants = []
+                for original in sorted({r["composite_rule"] for r in evidence}):
+                    records_for_variant = [r for r in evidence if r["composite_rule"] == original]
+                    variants.append({
+                        "rule_smarts": original,
+                        "occurrence_count": len(records_for_variant),
+                        **{key + "s": sorted({r["provenance"][key] for r in records_for_variant
+                                              if key in r["provenance"]})
+                           for key in ("variant_id", "composite_id", "tactic_entry_id")},
+                    })
+                identity = identities[rule]
+                mapping.append({"rule_id": ids[rule], "representative_smarts": rule,
+                                "identity": identity.id, "encoding": identity.encoding,
+                                "status": identity.status, "reason": identity.reason,
+                                "popularity": len(indices[rule]), "variants": variants})
+            write_json(out / "composite_rule_mapping.json", {"schema": POLICY, "rules": mapping})
         write_json(
             out / "composite.manifest.json",
             {
@@ -553,6 +593,13 @@ def export_composites(records, destination, source_files):
                 "rule_count": len(rules),
                 "input_sha256": digest(out / "composite_records.jsonl"),
                 "policy_compatibility": "requires this exact ordered vocabulary",
+                "rule_order": COMPOSITE_RULE_ORDER,
+                "popularity_semantics": ("unique canonical-product/mapped-query training pairs" if merge_equivalent
+                                         else "unique canonical-product/exact-rule training pairs"),
+                **({"rule_identity": POLICY,
+                    "mapping_sha256": digest(out / "composite_rule_mapping.json"),
+                    "occurrence_rule_semantics": "original certified variant; rule_id selects equivalent training representative"}
+                   if merge_equivalent else {}),
                 "reaction_indices_semantics": "zero-based unique product/rule training-pair indices",
             },
         )
@@ -561,6 +608,11 @@ def export_composites(records, destination, source_files):
             out,
             source_files,
             kind="linear-composites",
+            rule_identity=POLICY if merge_equivalent else "exact-smarts",
+            exact_variant_count=len(identities),
+            implementation={"preparation.py": digest(__file__),
+                            "composite_identity.py": digest(Path(__file__).with_name("composite_identity.py"))},
+            rule_order=COMPOSITE_RULE_ORDER,
             training_dataset="n1",
             occurrence_count=sum(map(len, grouped.values())),
             **summary,

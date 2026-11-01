@@ -116,6 +116,8 @@ def single_step_sources(assets, rules, rows):
 
 
 def composite_sources(assets, rules, rows):
+    from retrocomposite.composite_identity import mapped_rule_identity
+
     routes = [set() for _ in rows]
     for record in prep.read_records(assets / "composite_records.jsonl"):
         if record.get("dataset_id") != "n1":
@@ -128,7 +130,10 @@ def composite_sources(assets, rules, rows):
         if (
             record["product_smiles"] != row["product_smiles"]
             or record["rule_id"] != rule_id
-            or record["composite_rule"] != rules[rule_id]["rule_smarts"]
+            or (mapped_rule_identity(record["composite_rule"]).encoding
+                != mapped_rule_identity(rules[rule_id]["rule_smarts"]).encoding)
+            or ("training_rule_identity" in record and record["training_rule_identity"]
+                != mapped_rule_identity(rules[rule_id]["rule_smarts"]).id)
         ):
             raise ValueError("Composite record does not match its training pair")
         provenance = record["provenance"]
