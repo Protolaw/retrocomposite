@@ -1,10 +1,53 @@
 # Grouped splits and seeded MHN training
 
-Run from Retrocomposite with `.venv` active. Production execution requires the
-refreshed, matching inputs and reviewed cohort audits. These commands create
+Before training replacement assets, require the complete final-pair replay audit
+and review residual failures. The original public release predates this gate;
+its loader/encoder validation was not a full reaction-replay certificate. See
+[normalization/replay evidence](NORMALIZATION_REPLAY.md).
+
+
+The merged composite bundle is `data/composite_mapping_merged_v1/`. Use its
+`splits/{primary,patent_disjoint}` with the matching vocabulary snapshots;
+previous weights, labels and rule-encoding caches are incompatible. Its
+`merging.json` records partition changes after merging, and `replay/` records
+the full audit of every supporting occurrence. Patent-disjoint replay passes;
+primary still has the known n1 route 166 failure. See [merge results](COMPOSITE_MERGING.md)
+and [merge workflow](PREPARATION.md).
+
+
+Run from Retrocomposite after `conda activate retrocomposite_env`. Production
+execution requires the refreshed, matching inputs and reviewed cohort audits. These commands create
 new destinations and never overwrite a split or training run. The published
 release already includes verified splits; use the [download and training
 commands](COHORT_RELEASE.md#download-and-train) to avoid regenerating them.
+
+## Planned cohort and popularity matrix
+
+The main composite setting is primary/pop_gt1; the additional settings are
+primary/pop_ge1, patent_disjoint/pop_gt1 and patent_disjoint/pop_ge1. Train a
+separate composite MHN for each setting and model seed, sharing the single-step
+model. `pop_gt1` means at least two unique prepared target/rule pairs per merged
+label; `pop_ge1` includes singletons. Count only eligible n1 pairs, independently
+per cohort, before the grouped holdout; never use n5 frequencies.
+
+Freeze full-cohort connected groups and assignments, then derive both settings
+without reshuffling retained rows. Rebuild contiguous vocabulary IDs, policy
+rows, encoding caches and split snapshots together, retaining source mappings.
+Retain all eligible variants/decompositions for surviving merged labels. Audit
+training support and nonempty validation, and report common validation pairs
+and any change in holdout coverage. A popularity >1 label may still have only
+one example in training; priors use training counts only.
+
+Planned destinations are `data/experiments/<cohort>/<popularity>/` for assets,
+splits and audits, and `outputs/training/<cohort>/<popularity>/seed_<seed>/` for
+results. Use `primary` or `patent_disjoint` and `pop_gt1` or `pop_ge1`. Match model
+seeds and tuning protocol; calibrate each hybrid on eligible n1 development data.
+
+**Status:** popularity filtering and matched split derivation are not yet
+implemented. Existing merged bundles and the generic commands below use all
+supported labels; they do not create the new >1 experiment. Recompute counts
+and fully audit each final setting after upstream recertification. See the
+[experiment matrix](../PLAN.md#composite-popularity-experiment).
 
 ## Freeze splits under data/
 

@@ -1,15 +1,18 @@
 """Auditable adapters; chemistry extraction remains owned by SynPlanner."""
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from contextlib import contextmanager
 import csv
 from hashlib import sha256
 from importlib.metadata import PackageNotFoundError, version
 import json
 import os
+import shutil
 from pathlib import Path
 import tempfile
 
+
+COMPOSITE_RULE_ORDER = "popularity-descending-smarts-ascending/1"
 
 def digest(path):
     h = sha256()
@@ -168,13 +171,62 @@ def prepare_stock(sources, destination):
         )
 
 
-def prepare_single_step(sources, destination, config_path, workers=1):
+REACTION_NORMALIZATION_POLICY = "stereo-free-complete-reaction-before-extraction/1"
+
+
+def normalize_mapped_reaction(reaction):
+    """Prepare every molecule before deriving a rule; never mutate source data.
+
+    Keep heavy-atom map/isotope identity. Explicit hydrogens may be implicified
+    by SynPlanner's normalizer. Final serialized input stability is audited later.
+    """
+    from chython.containers import ReactionContainer
+    from synplan.chem.utils import safe_canonicalization
+
+    def normalize(mol):
+        original = mol.copy()
+        original.clean_stereo()
+        prepared = safe_canonicalization(original)
+        def inventory(value):
+            return {n: (a.atomic_number, a.isotope) for n, a in value.atoms()
+                    if a.atomic_number != 1}
+        if inventory(original) != inventory(prepared):
+            raise ValueError("Reaction normalization changed heavy-atom mapping or inventory")
+        check = prepared.copy()
+        check.kekule()
+        before = original.copy()
+        before.kekule()
+        # Preserve pre-existing unsupported source valences as evidence. The
+        # final replay gate decides executability; only newly introduced errors
+        # are normalization failures here.
+        if set(check.check_valence()) - set(before.check_valence()):
+            raise ValueError("Reaction normalization introduced invalid valence")
+        return prepared
+
+    return ReactionContainer(
+        tuple(normalize(m) for m in reaction.reactants),
+        tuple(normalize(m) for m in reaction.products),
+        tuple(normalize(m) for m in reaction.reagents),
+    )
+
+
+def prepare_single_step(sources, destination, config_path, workers=1, audit_output=None, progress=None):
     from chython import smiles
     from chython.containers import ReactionContainer
     from route_inspector.routes.access import reaction_nodes, reaction_smiles_from_node
     from synplan.chem.reaction.rules.config import RuleExtractionConfig
     from synplan.chem.reaction.rules.extraction import extract_rules_from_reactions
+    from retrocomposite.reaction_aware import POLICY as extraction_policy, extraction_reaction
 
+    destination = Path(destination).resolve()
+    audit_output = Path(audit_output).resolve() if audit_output else destination.with_name(destination.name + ".replay-audit")
+    candidate = destination.with_name(destination.name + ".candidate")
+    if destination.exists() or audit_output.exists() or candidate.exists():
+        raise FileExistsError("Use new preparation, audit and candidate paths")
+    paths = (destination, audit_output, candidate)
+    if any(a.is_relative_to(b) or b.is_relative_to(a)
+           for i, a in enumerate(paths) for b in paths[i + 1:]):
+        raise ValueError("Audit, candidate and training output paths must be separate")
     if workers < 1:
         raise ValueError("workers must be positive")
     config = RuleExtractionConfig.from_yaml(config_path)
@@ -183,6 +235,8 @@ def prepare_single_step(sources, destination, config_path, workers=1):
     source_files = inputs([*sources.values(), config_path])
     records = {}
     occurrence_count = 0
+    normalization_changes = []
+    alignment_records = []
     for dataset, route_id, root in route_sources(sources):
         for path, node in reaction_nodes(root):
             text = reaction_smiles_from_node(node)
@@ -193,26 +247,49 @@ def prepare_single_step(sources, destination, config_path, workers=1):
                 or not rxn.products
             ):
                 raise ValueError(f"Invalid reaction in {dataset}:{route_id}:{path}")
-            for mol in (*rxn.reactants, *rxn.products, *rxn.reagents):
-                mol.clean_stereo()
-            # Direction is the cleaned route's forward reaction. Do not reverse
-            # recorded mapping; SynPlanner's reverse_rule handles retro extraction.
+            original_mapped = format(rxn, "m")
+            original = rxn.copy()
+            original.clean_stereo()
+            normalized = normalize_mapped_reaction(rxn)
+            normalized_mapped = format(normalized, "m")
+            rxn, alignment = extraction_reaction(original, normalized, config)
+            source = {
+                "dataset": dataset, "route_id": route_id, "node_path": path,
+                "reaction_id": (node.get("metadata") or {}).get("ID"),
+            }
+            # Keep normalized chemistry and the extraction view distinct.
+            # Different aligned views must not collapse to a single rule source.
             key = (
-                tuple(sorted(molecule_key(str(m)) for m in rxn.reactants)),
-                tuple(sorted(molecule_key(str(m)) for m in rxn.products)),
+                tuple(sorted(molecule_key(str(m)) for m in normalized.reactants)),
+                tuple(sorted(molecule_key(str(m)) for m in normalized.products)),
+                tuple(sorted(str(m) for m in rxn.reactants))
+                if alignment and alignment["status"] == "aligned" else (),
+                tuple(sorted(str(m) for m in rxn.products))
+                if alignment and alignment["status"] == "aligned" else (),
             )
             mapped = format(rxn, "m")
-            record = records.setdefault(key, {"mapped": mapped, "sources": []})
+            record = records.setdefault(key, {"mapped": mapped, "sources": [], "source_reactions": []})
             record["mapped"] = min(record["mapped"], mapped)
-            record["sources"].append(
-                {
-                    "dataset": dataset,
-                    "route_id": route_id,
-                    "node_path": path,
-                    "reaction_id": (node.get("metadata") or {}).get("ID"),
-                }
-            )
+            record["sources"].append(source)
+            record["source_reactions"].append({
+                **source, "original_mapped": original_mapped, "normalized_mapped": normalized_mapped,
+                "extraction_mapped": mapped,
+            })
+            if alignment is not None:
+                alignment_records.append({**source, **alignment, "original_mapped": original_mapped,
+                                          "normalized_mapped": normalized_mapped, "extraction_mapped": mapped})
+            if str(original) != str(normalized):
+                from retrocomposite.identity import molecule_identity
+                normalization_changes.append({
+                    **source, "original_mapped": original_mapped, "normalized_mapped": normalized_mapped,
+                    "before": {side: sorted(molecule_identity(m) for m in getattr(original, side))
+                               for side in ("reactants", "products", "reagents")},
+                    "after": {side: sorted(molecule_identity(m) for m in getattr(normalized, side))
+                              for side in ("reactants", "products", "reagents")},
+                })
             occurrence_count += 1
+            if progress and occurrence_count % 5000 == 0:
+                progress(f"Normalized {occurrence_count} source reaction occurrences")
     if not records:
         raise ValueError("No reactions found")
     ordered = [records[k] for k in sorted(records)]
@@ -226,6 +303,16 @@ def prepare_single_step(sources, destination, config_path, workers=1):
                 for i, r in enumerate(ordered)
             ),
         )
+        write_jsonl(out / "reaction_normalization.jsonl", normalization_changes)
+        write_jsonl(out / "reaction_alignment.jsonl", alignment_records)
+        alignment_summary = {
+            "policy": extraction_policy, "assessed_occurrences": len(alignment_records),
+            "counts": dict(Counter(r["status"] for r in alignment_records)),
+            "change_ledger": "reaction_alignment.jsonl",
+            "reference": "unaltered normalized source reactions",
+        }
+        if progress:
+            progress(f"Prepared {occurrence_count} occurrences / {len(ordered)} unique reactions; extracting rules")
         extract_rules_from_reactions(
             config=config,
             reaction_data_path=str(reaction_file),
@@ -252,16 +339,37 @@ def prepare_single_step(sources, destination, config_path, workers=1):
             }
         if not retained.issubset(range(len(ordered))):
             raise ValueError("Rule provenance points outside the exported reactions")
+        from retrocomposite.replay import audit_training_pairs
+        replay = audit_training_pairs(out, audit_output, progress=progress)
+        if replay["status"] != "passed":
+            shutil.copytree(out, candidate)
+            (candidate / "INCOMPLETE").write_text("Final-pair replay failed. Diagnostic candidate only; do not train or publish.\n")
+            write_json(candidate / "candidate_status.json", {
+                "status": "blocked", "normalization_policy": REACTION_NORMALIZATION_POLICY,
+                "audit": str(audit_output), "inputs": source_files, "replay": replay,
+                "reaction_extraction": alignment_summary,
+            })
+            raise ValueError(f"Final-pair replay blocked publication; audit: {audit_output}; candidate: {candidate}")
+        shutil.copytree(audit_output, out / "replay_audit")
         finish(
             out,
             source_files,
             kind="single-step",
+            reaction_extraction=alignment_summary,
+            reaction_normalization={
+                "policy": REACTION_NORMALIZATION_POLICY,
+                "changed_occurrences": len(normalization_changes),
+                "source_evidence": "reaction_provenance.jsonl:source_reactions",
+                "change_ledger": "reaction_normalization.jsonl",
+            },
+            final_pair_replay={"status": replay["status"], "policy_rows": replay["policy_rows"],
+                               "summary": "replay_audit/summary.json"},
             reaction_occurrences=occurrence_count,
             unique_reactions=len(ordered),
             duplicates=occurrence_count - len(ordered),
             retained_reaction_count=len(retained),
             excluded_reaction_count=len(ordered) - len(retained),
-            deduplication="stereo-free reactant/product multisets; reagents excluded",
+            deduplication="normalized reaction and extraction-view reactant/product multisets; reagents excluded",
             config=digest(config_path),
             workers=workers,
             policy_product_normalization=normalization,
@@ -401,14 +509,30 @@ def check_composite_record(record):
     }
 
 
-def export_composites(records, destination, source_files):
+def export_composites(records, destination, source_files, *, merge_equivalent=True):
+    from retrocomposite.composite_identity import POLICY, mapped_rule_identity
+
+    # Keep original certified SMARTS in occurrence records. Only training labels
+    # use a deterministic representative; tactic/certificate evidence stays local.
+    checked_records = [check_composite_record(record) for record in records]
+    families = defaultdict(set)
+    identities = {}
+    for record in checked_records:
+        rule = record["composite_rule"]
+        identity = mapped_rule_identity(rule)
+        key = identity.encoding if merge_equivalent else rule
+        families[key].add(rule)
+        identities[rule] = identity
+    representative = {rule: min(variants) for variants in families.values() for rule in variants}
     grouped = defaultdict(list)
-    for record in records:
-        checked = check_composite_record(record)
-        grouped[(checked["composite_rule"], checked["product_smiles"])].append(checked)
+    for checked in checked_records:
+        rule = checked["composite_rule"]
+        grouped[(representative[rule], checked["product_smiles"])].append(checked)
     if not grouped:
         raise ValueError("No eligible linear composite records")
-    rules = sorted({r for r, _p in grouped})
+    # Count unique prepared product/rule pairs, not duplicate occurrences.
+    popularity = Counter(rule for rule, _product in grouped)
+    rules = sorted(popularity, key=lambda rule: (-popularity[rule], rule))
     ids = {rule: i for i, rule in enumerate(rules)}
     pairs = sorted(grouped, key=lambda key: (ids[key[0]], key[1]))
     with publication(destination) as out:
@@ -429,7 +553,8 @@ def export_composites(records, destination, source_files):
         write_jsonl(
             out / "composite_records.jsonl",
             (
-                {**r, "rule_id": ids[rule], "training_pair_index": i}
+                {**r, "rule_id": ids[rule], "training_pair_index": i,
+                 **({"training_rule_identity": identities[rule].id} if merge_equivalent else {})}
                 for i, (rule, product) in enumerate(pairs)
                 for r in sorted(
                     grouped[(rule, product)],
@@ -437,6 +562,27 @@ def export_composites(records, destination, source_files):
                 )
             ),
         )
+        if merge_equivalent:
+            mapping = []
+            for rule in rules:
+                evidence = [r for (representative_rule, _), rs in grouped.items()
+                            if representative_rule == rule for r in rs]
+                variants = []
+                for original in sorted({r["composite_rule"] for r in evidence}):
+                    records_for_variant = [r for r in evidence if r["composite_rule"] == original]
+                    variants.append({
+                        "rule_smarts": original,
+                        "occurrence_count": len(records_for_variant),
+                        **{key + "s": sorted({r["provenance"][key] for r in records_for_variant
+                                              if key in r["provenance"]})
+                           for key in ("variant_id", "composite_id", "tactic_entry_id")},
+                    })
+                identity = identities[rule]
+                mapping.append({"rule_id": ids[rule], "representative_smarts": rule,
+                                "identity": identity.id, "encoding": identity.encoding,
+                                "status": identity.status, "reason": identity.reason,
+                                "popularity": len(indices[rule]), "variants": variants})
+            write_json(out / "composite_rule_mapping.json", {"schema": POLICY, "rules": mapping})
         write_json(
             out / "composite.manifest.json",
             {
@@ -447,6 +593,13 @@ def export_composites(records, destination, source_files):
                 "rule_count": len(rules),
                 "input_sha256": digest(out / "composite_records.jsonl"),
                 "policy_compatibility": "requires this exact ordered vocabulary",
+                "rule_order": COMPOSITE_RULE_ORDER,
+                "popularity_semantics": ("unique canonical-product/mapped-query training pairs" if merge_equivalent
+                                         else "unique canonical-product/exact-rule training pairs"),
+                **({"rule_identity": POLICY,
+                    "mapping_sha256": digest(out / "composite_rule_mapping.json"),
+                    "occurrence_rule_semantics": "original certified variant; rule_id selects equivalent training representative"}
+                   if merge_equivalent else {}),
                 "reaction_indices_semantics": "zero-based unique product/rule training-pair indices",
             },
         )
@@ -455,6 +608,11 @@ def export_composites(records, destination, source_files):
             out,
             source_files,
             kind="linear-composites",
+            rule_identity=POLICY if merge_equivalent else "exact-smarts",
+            exact_variant_count=len(identities),
+            implementation={"preparation.py": digest(__file__),
+                            "composite_identity.py": digest(Path(__file__).with_name("composite_identity.py"))},
+            rule_order=COMPOSITE_RULE_ORDER,
             training_dataset="n1",
             occurrence_count=sum(map(len, grouped.values())),
             **summary,

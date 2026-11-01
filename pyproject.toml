@@ -17,8 +17,10 @@ retrocomposite = "retrocomposite.cli:main"
 retrocomposite-hub = "retrocomposite.hub:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["retrocomposite*"]
+namespaces = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["."]

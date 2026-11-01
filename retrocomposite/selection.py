@@ -229,7 +229,10 @@ def assess_occurrence(
 
 
 def support(records):
+    from retrocomposite.composite_identity import POLICY as RULE_POLICY, mapped_rule_identity
+
     tactics, variants, pairs = defaultdict(list), defaultdict(list), set()
+    exact_pairs = set()
     for record in records:
         p = record["provenance"]
         occurrence = p["reference_occurrence_id"]
@@ -237,11 +240,15 @@ def support(records):
         variants[(p["composite_id"], p["variant_id"], record["composite_rule"])].append(
             occurrence
         )
-        pairs.add((record["product_smiles"], record["composite_rule"]))
+        exact_pairs.add((record["product_smiles"], record["composite_rule"]))
+        pairs.add((record["product_smiles"], mapped_rule_identity(record["composite_rule"]).encoding))
     return {
         "occurrences": len(records),
         "training_pairs": len(pairs),
-        "rules": len({r["composite_rule"] for r in records}),
+        "rules": len({key for _, key in pairs}),
+        "rule_identity": RULE_POLICY,
+        "exact_variant_rules": len({r["composite_rule"] for r in records}),
+        "exact_variant_training_pairs": len(exact_pairs),
         "tactics": {k: sorted(v) for k, v in sorted(tactics.items())},
         "variants": [
             {
@@ -368,7 +375,7 @@ def select_cohorts(
                 checked = {
                     k: v
                     for k, v in checked.items()
-                    if k not in {"rule_id", "training_pair_index"}
+                    if k not in {"rule_id", "training_pair_index", "training_rule_identity"}
                 }
                 primary.append(checked)
                 if audit["patent_exclusions"]:

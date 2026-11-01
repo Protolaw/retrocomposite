@@ -19,6 +19,7 @@ def parser():
         if name == "single-step":
             command.add_argument("--config", type=Path, required=True)
             command.add_argument("--workers", type=int, default=1)
+            command.add_argument("--audit-output", type=Path)
     command = subs.add_parser("composite-library")
     command.add_argument("--reference-library", type=Path, required=True)
     command.add_argument("--composite-library", type=Path, required=True)
@@ -27,6 +28,11 @@ def parser():
     command = subs.add_parser("composite-json")
     command.add_argument("--records", type=Path, required=True)
     command.add_argument("--output", type=Path, required=True)
+    command = subs.add_parser("audit-pairs", help="Replay every final training pair against its supporting precursors")
+    command.add_argument("--assets", type=Path, required=True)
+    command.add_argument("--output", type=Path, required=True)
+    command.add_argument("--max-outcomes", type=int, default=100)
+    command.add_argument("--max-mapping-work", type=int, default=100_000)
     command = subs.add_parser("validate")
     command.add_argument("--rules", type=Path, required=True)
     command = subs.add_parser(
@@ -82,8 +88,19 @@ def main(argv=None):
     args = parser().parse_args(argv)
     if args.command == "single-step":
         prep.prepare_single_step(
-            {"n1": args.n1, "n5": args.n5}, args.output, args.config, args.workers
+            {"n1": args.n1, "n5": args.n5}, args.output, args.config, args.workers,
+            args.audit_output, progress=lambda message: print(message, file=sys.stderr, flush=True)
         )
+    elif args.command == "audit-pairs":
+        from retrocomposite.replay import audit_training_pairs
+        result = audit_training_pairs(
+            args.assets, args.output, max_outcomes=args.max_outcomes,
+            max_mapping_work=args.max_mapping_work,
+            progress=lambda message: print(message, file=sys.stderr, flush=True),
+        )
+        print(json.dumps(result, indent=2))
+        if result["status"] != "passed":
+            raise SystemExit(2)
     elif args.command == "stock":
         prep.prepare_stock({"n1": args.n1, "n5": args.n5}, args.output)
     elif args.command == "composite-library":

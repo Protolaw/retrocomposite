@@ -138,8 +138,8 @@ def test_composite_roundtrip_retains_occurrences_and_exact_variants(tmp_path):
     out = tmp_path / "composites"
     export_composites(read_records(source), out, inputs([source]))
     assert validate_training_assets(out / "composite.tsv") == {
-        "rule_count": 2,
-        "policy_rows": 2,
+        "rule_count": 1,
+        "policy_rows": 1,
     }
     rows = list(read_records(out / "composite_records.jsonl"))
     assert len(rows) == 3
@@ -181,8 +181,8 @@ def test_composite_roundtrip_retains_occurrences_and_exact_variants(tmp_path):
     )
     network = build_mhn_ranking_network(config, dataset).eval()
     with torch.no_grad():
-        logits = network.get_logits(Batch.from_data_list([dataset[0], dataset[1]]))
-    assert logits.shape == (2, 2)
+        logits = network.get_logits(Batch.from_data_list([dataset[0]]))
+    assert logits.shape == (1, 1)
     assert torch.isfinite(logits).all()
 
 
