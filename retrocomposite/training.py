@@ -49,7 +49,7 @@ def train(
         raise ValueError("Unsupported accelerator or determinism mode")
     metadata, _ = load_split(split)
     source_files = prep.inputs([split / "preparation.json", config])
-    environment = Path(__file__).resolve().parents[2] / "environment"
+    environment = Path(__file__).resolve().parents[1] / "environment"
     environment_files = [
         environment / name
         for name in ("sources.json", "requirements.lock.txt")
