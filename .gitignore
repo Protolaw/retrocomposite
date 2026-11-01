@@ -13,3 +13,5 @@ dist/
 models/
 *.ckpt
 .DS_Store
+
+.ipynb_checkpoints/
