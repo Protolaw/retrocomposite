@@ -108,10 +108,10 @@ those targets visible in full-n5 reporting and additionally state the evaluable
 reference coverage and confirmed recovery lower bound.
 
 Local implementation references: RouteInspector
-[`datasets/merge.py`](/Users/almazgil/Developer/projects/route-inspector/route_inspector/datasets/merge.py)
+[`datasets/merge.py`](../../route-inspector/route_inspector/datasets/merge.py)
 constructs the ordered, history-preserving graph and confirms exact isomorphism;
 SynPlanner
-[`representation/hash.py`](/Users/almazgil/Developer/projects/SynPlanner/synplan/chem/reaction/routes/representation/hash.py)
+[`representation/hash.py`](../../SynPlanner/synplan/chem/reaction/routes/representation/hash.py)
 provides order-aware and order-agnostic RouteCGR identities. Native hash labels
 alone do not preserve every intermediate-state field of the merger's comparator.
 These are adapter starting points; no new recovery evaluator has been implemented.
@@ -141,9 +141,9 @@ Do not pool SB-CGR identities from unrelated targets into a target-level diversi
 claim. Preserve membership maps so each class traces to its explicit routes.
 
 SynPlanner already provides
-[`compose_sb_cgr`](/Users/almazgil/Developer/projects/SynPlanner/synplan/chem/reaction/routes/representation/sb_cgr.py),
-[`cluster_routes`](/Users/almazgil/Developer/projects/SynPlanner/synplan/chem/reaction/routes/clustering/core.py)
-and [`compare_sb_cgr_clusters`](/Users/almazgil/Developer/projects/SynPlanner/synplan/chem/reaction/routes/analysis.py).
+[`compose_sb_cgr`](../../SynPlanner/synplan/chem/reaction/routes/representation/sb_cgr.py),
+[`cluster_routes`](../../SynPlanner/synplan/chem/reaction/routes/clustering/core.py)
+and [`compare_sb_cgr_clusters`](../../SynPlanner/synplan/chem/reaction/routes/analysis.py).
 Their current clustering uses SB-CGR string identities; verify the frozen runtime's
 mapping/normalization behavior before adopting them for this experiment.
 

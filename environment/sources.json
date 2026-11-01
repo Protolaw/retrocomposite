@@ -521,7 +521,7 @@
       "version": "2.34.2"
     },
     {
-      "editable_project_location": "/Users/almazgil/Developer/projects/retrocomposite",
+      "editable_project_location": ".",
       "name": "retrocomposite",
       "version": "0.1.0"
     },
@@ -699,7 +699,7 @@
     "SynPlanner": {
       "git_commit": "53ffed21794e829cd660b63effaaf4351e10cf95",
       "git_status": "M tutorials/08_Protection_Scoring.ipynb\n?? agents/\n?? aimnet/\n?? extra/\n?? tutorials/abatinib_chemformer_22.10.26.html\n?? tutorials/oligo/\n?? tutorials/oligo_sent/\n?? tutorials/prot/\n?? tutorials/symm_rules.ipynb\n?? tutorials/xx_rule_process.ipynb",
-      "path": "/Users/almazgil/Developer/projects/SynPlanner",
+      "path": "../SynPlanner",
       "source_digest": "a78aae1bf2fd1475b85a4faa338eade4f7084324e26538ea25e89d81da8f0668",
       "source_files": {
         "LICENSE": "0e216961bd7532ea5d20401477f7db6558caf09467964691427d442e02a04df5",
@@ -907,7 +907,7 @@
     "route-inspector": {
       "git_commit": "f38f668a185801c37780f94db78fd76af1d4a122",
       "git_status": "M docs/workflows/merge_clean_routes.rst\n M route_inspector/gui/screens.py\n?? paper/CODEX_TASK_synchronize_manuscript_numbers.md",
-      "path": "/Users/almazgil/Developer/projects/route-inspector",
+      "path": "../route-inspector",
       "source_digest": "5712e340baa44ef20aeb01e031d12903d72496f479d1b88f4b480f8b1e9f03b1",
       "source_files": {
         "LICENSE": "cca485d284e570fd88dd284c715e1d683b2830e9ad46fc22f674a400359f516f",

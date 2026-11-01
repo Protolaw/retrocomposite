@@ -32,7 +32,7 @@ def project(tmp_path):
         if f.name != "unrecorded.txt"
     }
     source = {
-        "path": str(root),
+        "path": "../upstream",
         "source_files": files,
         "source_digest": snapshots.digest(json.dumps(files, sort_keys=True).encode()),
         "git_commit": "abc",
@@ -118,7 +118,7 @@ def test_tampered_members_rejected_even_with_updated_archive_hash(
         member = tarfile.TarInfo(member_name)
         if symlink:
             member.type = tarfile.SYMTYPE
-            member.linkname = "/tmp/escape"
+            member.linkname = str((tmp_path / "escape").resolve())
             tar.addfile(member)
         else:
             data = b"tampered"
@@ -129,3 +129,19 @@ def test_tampered_members_rejected_even_with_updated_archive_hash(
     with pytest.raises(ValueError):
         snapshots.unpack(project, tmp_path / "restored")
     assert not (tmp_path / "restored").exists()
+
+
+@pytest.mark.parametrize("relative_override", [False, True])
+def test_explicit_source_override_is_relative_to_caller(project, tmp_path, monkeypatch, relative_override):
+    project, root = project
+    receipt = project / "environment/sources.json"
+    metadata = json.loads(receipt.read_text())
+    metadata["sources"]["Example"]["path"] = "../missing-recorded-location"
+    receipt.write_text(json.dumps(metadata))
+    caller = tmp_path / "caller"
+    caller.mkdir()
+    monkeypatch.chdir(caller)
+    override = Path("../upstream") if relative_override else root
+    snapshots.pack(project, {"Example": override})
+    snapshots.unpack(project, tmp_path / "restored")
+    assert (tmp_path / "restored/Example/module.py").read_bytes() == (root / "module.py").read_bytes()

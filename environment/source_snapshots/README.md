@@ -23,3 +23,14 @@ Two generated GUI TLS files under `route_inspector/outputs/gui/tls/` are
 excluded: `server.key` and `server.crt`. Their names and original hashes are
 recorded in `manifest.json`, with both the original inventory digest and the
 portable content digest. No source code is changed by this exclusion.
+
+Source locations in `../sources.json` are relative to the Retrocomposite repository
+root: `../SynPlanner` and `../route-inspector` refer to neighboring checkouts,
+and `.` identifies Retrocomposite itself. The packer resolves these locations
+against its `--project` directory, regardless of the current working directory.
+Explicit `--synplanner` and `--route-inspector` overrides are relative to the
+caller's working directory. Existing absolute overrides remain supported.
+
+Historical verification logs use repository-relative display paths. Their test
+results and source-content hashes are unchanged; bundled upstream archives retain
+their original bytes and checksums.

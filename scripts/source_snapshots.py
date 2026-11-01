@@ -66,7 +66,7 @@ def portable_metadata(sources):
 
 def pack(project, roots=None):
     """Only recorded files are packaged, including recorded working-tree edits."""
-    project = Path(project)
+    project = Path(project).resolve()
     sources = json.loads((project / "environment/sources.json").read_text())["sources"]
     destination = project / "environment/source_snapshots"
     if destination.exists():
@@ -75,7 +75,12 @@ def pack(project, roots=None):
     with tempfile.TemporaryDirectory(dir=destination.parent) as tmp:
         staging = Path(tmp)
         for name, source in sorted(sources.items()):
-            root = Path((roots or {}).get(name, source["path"]))
+            # Recorded locations are repository-relative; CLI overrides retain
+            # the usual caller-working-directory interpretation.
+            if name in (roots or {}):
+                root = Path(roots[name])
+            else:
+                root = project / source["path"]
             files = expected_files(source, name)
             bundled_digest = digest(json.dumps(files, sort_keys=True).encode())
             filename = f"{name}-{bundled_digest[:16]}.tar.gz"
