@@ -1,48 +1,37 @@
 # Training workflow
 
-Native TSV preparation, cohort filtering, grouped splitting, and seed-controlled
-MHN training are implemented. Production split review, full training, calibration,
-and the SynPlanner hybrid implementation remain TODOs. See
-[training commands](../TRAINING.md), [PLAN.md](../../PLAN.md), and
-[open decisions](../../QUESTIONS.md).
+Grouped splitting and seed-controlled MHN training are implemented. The new
+popularity exports and matched split derivation, production training, calibration
+and hybrid implementation remain TODOs. See [training commands](../TRAINING.md)
+and [experiment matrix](../../PLAN.md#composite-popularity-experiment).
 
 ```mermaid
 flowchart TD
-    SINGLE["data/single_step/<br/>Cleaned n1+n5 rules and examples"]
-    PRIMARY["data/cohorts/primary/<br/>Eligible n1 composite assets after E1-E3"]
-    SENS["data/cohorts/patent_disjoint/<br/>Eligible sensitivity assets"]
-    SPLITSS["Freeze single-step train/validation assignments<br/>data/splits/"]
-    SPLITP["Group eligible primary examples<br/>data/splits/"]
-    SPLITS["Same grouping protocol for sensitivity examples<br/>data/splits/"]
-    CONFIG["MHN ranking: QueryCGR rule graphs<br/>and GPS molecule encoding"]
-    TRAINSS["Train shared single-step MHN"]
-    TRAINP["Train primary composite MHN"]
-    TRAINS["Train patent-disjoint composite MHN"]
-    SS["outputs/training/single_step/<br/>Checkpoint, metrics and provenance"]
-    CP["outputs/training/primary/<br/>Checkpoint, metrics and provenance"]
-    CS["outputs/training/patent_disjoint/<br/>Checkpoint, metrics and provenance"]
-    CALP["Calibrate primary hybrid<br/>Eligible primary n1 development data only"]
-    CALS["Calibrate sensitivity hybrid<br/>Eligible sensitivity development data only"]
-    FREEZE["outputs/training/<br/>Freeze checkpoints, calibration, vocabulary hashes and seeds"]
-    SINGLE --> SPLITSS --> TRAINSS --> SS
-    PRIMARY --> SPLITP --> TRAINP --> CP
-    SENS --> SPLITS --> TRAINS --> CS
-    CONFIG -.-> TRAINSS
-    CONFIG -.-> TRAINP
-    CONFIG -.-> TRAINS
-    SS --> FREEZE
-    SS --> CALP
-    CP --> CALP --> FREEZE
-    SS --> CALS
-    CS --> CALS --> FREEZE
+    SINGLE["Cleaned n1+n5 single-step assets"]
+    SSPLIT["Freeze shared single-step split"]
+    SS["Train shared single-step MHN"]
+    COHORTS["Eligible n1 merged composites<br/>Primary and patent-disjoint cohorts"]
+    GROUP["Freeze full-cohort molecule/route groups and assignments"]
+    POP["Derive matched settings per cohort<br/>pop_gt1 main; pop_ge1 includes singletons"]
+    AUDIT["data/experiments/cohort/popularity/<br/>Vocabulary, policy rows, splits, replay and lineage audits"]
+    TRAIN["Train four composite MHNs per model seed<br/>Same seed list and tuning protocol"]
+    CONFIG["MHN; QueryCGR rule graphs; GPS encoders"]
+    CAL["Calibrate each hybrid on eligible n1 development data"]
+    FREEZE["outputs/training/cohort/popularity/seed/<br/>Freeze checkpoints, calibration, logs and metrics"]
+    SINGLE --> SSPLIT --> SS
+    COHORTS --> GROUP --> POP --> AUDIT --> TRAIN
+    CONFIG -.-> SS
+    CONFIG -.-> TRAIN
+    SS --> CAL
+    TRAIN --> CAL --> FREEZE
 ```
 
-Single-step exposure to n5 is deliberate. No n5 composite examples enter composite
-training, validation, or calibration. Grouping keeps identical motif inputs and all linked source routes together;
-optional patent grouping adds patent links and requires complete provenance. The hybrid allocation
-within 50 remains open; 40/10 is a proposal. Keep each checkpoint tied to its
-ordered vocabulary and eligible decomposition pool in `data/`.
+Popularity counts unique prepared target/merged-rule pairs from eligible n1,
+before its holdout. Preserve assignments when deriving >1; verify train support
+and report common validation pairs. No n5 composite examples enter training,
+validation or calibration. Single-step exposure to n5 is deliberate.
 
-Prepared data and frozen splits stay in [data/](../../data/README.md). Training
-results and calibration belong in [outputs/training/](../../outputs/README.md).
+Prepared data and frozen splits stay in [data/](../../data/README.md). Each
+checkpoint must match its ordered vocabulary and eligible decomposition pool.
+Results belong in [outputs/training/](../../outputs/README.md).
 Next: [planning](planning.md).

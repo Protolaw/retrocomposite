@@ -10,6 +10,7 @@ RouteInspector and SynPlanner.
 - [Preparation commands and data contracts](docs/PREPARATION.md)
 - [Shared-tactic selection, exclusion filters, and audits](docs/SELECTION.md)
 - [Grouped splits and seeded training commands](docs/TRAINING.md)
+- [Visual rule analysis and normalization replay](notebooks/12_Rule_Analysis.ipynb)
 - [Move between machines: GitHub and Hugging Face](docs/MOBILITY.md)
 - Mermaid workflows: [preparation](docs/diagrams/preparation.md),
   [training](docs/diagrams/training.md), [planning](docs/diagrams/planning.md),
@@ -67,11 +68,14 @@ Public repositories: [code](https://github.com/Protolaw/retrocomposite),
 The [mobility guide](docs/MOBILITY.md) covers versioned uploads, verified downloads,
 and the source snapshots needed to recreate the training environment.
 
-Use Python 3.12 for the initial local environment:
+Create the Conda environment with Python 3.12, install the pinned stack, and
+register its notebook kernel:
 
 ```sh
-python3.12 scripts/setup_environment.py
-source .venv/bin/activate
+conda env create -f environment/conda.yml --no-default-packages
+conda activate retrocomposite_env
+python scripts/setup_environment.py --active-conda
+python -m ipykernel install --user --name retrocomposite_env --display-name "Python (retrocomposite_env)"
 retrocomposite --help
 python -m pytest -q
 ```
@@ -84,8 +88,9 @@ RouteInspector currently pins a different SynPlanner Git revision. Setup
 explicitly overrides only that dependency, constrains other dependencies to the
 saved pins, and checks package consistency. Each new environment records its
 actual installed versions and platform in `retrocomposite-environment.json`.
-Existing
-environments and source repositories are not changed. Source edits require
+The installer targets the activated Conda environment and refuses the base
+environment or a mismatched Python interpreter. Existing `.venv` environments
+and source repositories are preserved. Source edits require
 reinstallation; this environment does not silently follow editable upstream code.
 
 Library reconstruction belongs to RouteInspector. This repository consumes its
@@ -97,3 +102,32 @@ The chosen dataset inputs, exact hashes, and preparation status are in
 [dataset readiness](docs/DATASET_READINESS.md). Hugging Face repositories are
 accessible. The selected files are the existing standalone `data/clean/` files,
 as confirmed by the user on 2026-10-25.
+
+## Visually inspect reaction rules
+
+Open [the migrated SynPlanner rule-analysis notebook](notebooks/12_Rule_Analysis.ipynb)
+with the project environment:
+
+```sh
+conda activate retrocomposite_env
+python -m jupyterlab notebooks/12_Rule_Analysis.ipynb
+```
+
+Select **Python (retrocomposite_env)** as the notebook kernel and run the cells
+in order. The notebook defaults to
+`data/releases/n1-n5-composites-inchi-v1` when restored, otherwise `data/`.
+Change `DATA_ROOT` and `DATASET` near the top to choose single-step, primary
+composite, or patent-disjoint composite assets. No separate upstream checkout is
+needed, and the existing full environment already includes Jupyter and widgets.
+
+The first inspection selects rule 4500 and policy row 31189 (n1 route 434) in the
+original single-step release. A live normalization audit identifies the other
+problematic rules; the browser shows exact rule IDs, original/exported target
+structures, source reactions, provenance, InChIs, and replayed precursors.
+Drawings use Chython with SmilesDrawer. The original tutorial's vocabulary
+statistics and optional rule-set comparison follow the browser.
+
+The original release contains normalization-related training-label mismatches;
+loading successfully does not establish rule applicability. This notebook is for
+inspection and does not modify the dataset. Source notebook outputs are cleared;
+keep exported views and analysis results under `outputs/analysis/`.

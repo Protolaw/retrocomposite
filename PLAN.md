@@ -1,18 +1,25 @@
 # General experiment plan
 
-Updated: 2026-10-25. This file records scientific decisions and architecture;
+Updated: 2026-10-29. This file records scientific decisions and architecture;
 execution status belongs in TODO.md and unresolved choices in QUESTIONS.md.
 Workflow diagrams: [preparation](docs/diagrams/preparation.md),
 [training](docs/diagrams/training.md), [planning](docs/diagrams/planning.md),
 [post-processing](docs/diagrams/postprocessing.md), and
-[analysis](docs/diagrams/analysis.md). Preparation has two diagrams in the
-same file: shared data preparation, then composite cohort filtering.
+[analysis](docs/diagrams/analysis.md). Preparation has three diagrams in the
+same file: shared data preparation, primary occurrence exclusions, then composite
+cohorts and vocabulary audits. Post-processing also has three diagrams: candidate
+preparation, replay and reconciliation, then validation and finalization.
 
 ## Objective and interpretation
 
-Measure whether learned linear composite actions improve MCTS planning cost,
-validated solve rate, and explicit-route diversity over a shared single-step
-reaction recommendation system (RRS).
+Measure whether learned linear composite actions improve validated stock-reaching
+solve rate and source-route recovery over a shared single-step reaction
+recommendation system (RRS), while requiring fewer actual model calls and less
+end-to-end time, including tactic replay. These are hypotheses to test jointly;
+report tradeoffs if gains in success require more computation. Exact RouteCGR
+recovery measures reproduction of a recorded source route; other validated
+stock-reaching routes remain successful solutions. SB-CGR diversity is a
+supplementary analysis of the final explicit routes.
 
 The single-step vocabulary and policy data come from reactions in cleaned n1
 and n5. We intentionally accept exposure to molecules and reactions used in
@@ -56,12 +63,50 @@ policy instead of describing the entire experiment as leakage-free.
 - Exclude shared final-target routes, shared n5 motif inputs, and ordered InChI
   reaction-sequence overlap from all composite-derived assets.
 - Run patent-disjointness as an additional sensitivity analysis.
+- Main composite vocabulary: popularity >1 after exclusions and mapping-equivalent
+  merging. Add an all-rules (popularity >=1, including singletons) experiment in
+  both cohorts; use eligible n1 support only to calculate popularity.
+- Plan all cleaned n5 final targets, including routes without detected tactics;
+  reference-tactic coverage is an analysis stratum, never a target-selection gate.
 - Use the union of actual terminal molecule nodes in cleaned n1+n5 JSON as
   the stock for both planning arms.
   Do not use the original PaRoutes stock files or blindly trust `in_stock` flags.
 - Ignore stereochemistry in exported model inputs, reactions, targets, stock,
   and planning evaluation; keep original sources unchanged.
 - Implement the future hybrid policy on a separate SynPlanner branch.
+
+## Normalization and final-pair acceptance
+
+Normalize complete mapped reactions after removing stereo and before single-step
+rule extraction. Preserve source reactions and the normalization ledger. The
+16 previously flagged rows all passed the targeted re-extraction trial; this
+supports the repair but does not establish whole-corpus validity.
+
+Use a reaction-aware extraction view when independent normalization adds a
+remote proton/bond-order shift in a source-unchanged region. Preserve all
+recorded source changes, the prepared target, atom maps and full normalized
+source precursor references. Align only assessed single/double bond shifts
+that conserve hydrogens, preserve Standard InChI and normalize back to the
+identical mapped precursor graph. Accept the view only when its serialized
+rule replays to the exact prepared precursors. Uncertain proposals retain
+complete normalization and remain visible to the final audit. Record original,
+normalized and extraction reactions separately; do not substitute rules by ID.
+
+Before rebuilding a training release, audit every final product/rule pair
+against all supporting precursor multisets through the actual SynPlanner
+reactor. Keep source valence limitations, mismatches, no-outcome cases and
+budget-limited cases visible. A failed audit blocks publication; do not silently
+filter failures or change benchmark targets. Recompute vocabularies and grouped
+splits only for accepted assets. Existing public files remain historical.
+
+Audit composite final targets against their certified net boundaries as well.
+A source certificate alone cannot validate a subsequently normalized target.
+Rebuilding/recertifying composite libraries remains RouteInspector's job.
+Direct replay does not replace ordered unwrapping and final stock checks.
+Normalization changes do not redefine Standard InChI or E1-E3; audit any changed
+model-input overlap before a replacement composite release.
+
+See [normalization/replay evidence](docs/NORMALIZATION_REPLAY.md).
 
 ## Artifact organization
 
@@ -227,6 +272,11 @@ For an asset stem `single_step` or `composite`:
 Rule IDs are zero-based row indices in the ordered rule file. The policy-data
 stem must correspond to its rule TSV: the MHN trainer discovers the vocabulary
 using that naming convention. Never reorder the vocabulary independently.
+Composite exports order rules by descending popularity (unique prepared
+product/mapping-equivalent-rule pairs), breaking ties by representative SMARTS text. Assign IDs only
+after sorting and regenerate all labels, pair indices, manifests and split
+snapshots together. Occurrence duplicates remain in provenance without
+inflating popularity.
 
 Single-step extraction delegates chemistry to SynPlanner's current extraction
 API. The checked-in extraction configuration starts from RouteInspector's
@@ -234,12 +284,20 @@ functional-group configuration, with stereo ignored and minimum popularity 1.
 The extraction settings have been checked against both selected reference
 profiles. Any later source/profile release requires a new compatibility check.
 
-Composite export uses each certified link's exact mapped executable SMARTS,
-not a family representative substituted for it. The product is the occurrence's
-`motif_target_smiles`. Multiple observed labels for one molecule remain multiple
-training rows. Exact duplicate product/rule pairs may be deduplicated while
-retaining all occurrences in provenance. Unobserved rule applicability is not
-claimed to have been exhaustively labelled.
+Composite export retains each certified link's exact executable SMARTS and
+complete tactic decomposition in occurrence evidence. Training labels merge only
+queries equivalent under simultaneous atom renumbering across both sides, with
+all query predicates, side presence and molecule-pattern grouping preserved.
+The lexicographically smallest eligible exact variant represents each class;
+RouteInspector v3 family identity alone is insufficient because it ignores
+cross-side atom correspondence. Unsupported predicates keep exact identity.
+The product is the occurrence's `motif_target_smiles`. Deduplicate prepared
+product/merged-rule pairs while preserving every original occurrence, variant,
+certificate and decomposition. Keep non-equivalent labels as separate positives.
+Replay each chosen representative against every supporting certified boundary.
+Unobserved rule applicability is not exhaustively labelled, and direct replay
+does not certify ordered tactic unwrapping. Regenerate matching grouped splits
+with the original settings and audit any partition changes.
 
 The standard SynPlanner CLI makes its own ranking train/validation split.
 Retrocomposite now supplies `split` and `train` commands that bypass that split
@@ -313,11 +371,83 @@ Use `min_mol_size=0` so a small non-stock fragment cannot count as a building
 block. Report already-in-stock targets separately. Recheck stock after
 unwrapping, including components omitted by the net-composite abstraction.
 
+## Composite popularity experiment
+
+The main setting is `pop_gt1`: retain merged composite labels with popularity
+at least two. The additional `pop_ge1` setting includes all supported labels,
+including popularity-one rules. Here popularity means unique prepared
+`(product_smiles, merged rule)` policy pairs, as in the exported TSV; repeated
+source occurrences of the same pair count once. It does not mean distinct
+patents, distinct source routes, or number of tactic decompositions.
+
+Compute support independently within each eligible n1 cohort, after E1-E3,
+optional patent exclusion, preparation and mapping-equivalent merging. Never use
+n5 frequencies for this threshold. Apply the threshold to merged labels, not
+individual exact variants; retain all eligible n1 variants and decompositions
+for each retained label. The criterion uses the full eligible n1 preparation
+corpus before its grouped holdout. Thus >1 does not guarantee two examples in
+the training partition. Training-frequency priors must use training rows only.
+
+| Setting | Composite cohort | Minimum popularity | Role |
+| --- | --- | --- | --- |
+| B50 | None | — | Shared single-step baseline |
+| Primary / pop_gt1 | E1-E3 | 2 | Main hybrid |
+| Primary / pop_ge1 | E1-E3 | 1 | Singleton-inclusion sensitivity |
+| Patent-disjoint / pop_gt1 | E1-E3 + patent exclusion | 2 | Patent sensitivity |
+| Patent-disjoint / pop_ge1 | E1-E3 + patent exclusion | 1 | Combined sensitivity |
+
+Freeze the full eligible cohort's molecule/route groups and split assignments
+first, then derive both popularity settings from those same assignments. Do not
+reshuffle surviving examples or break groups after filtering. Check retained
+labels still have training support and that validation remains nonempty; report
+achieved validation fraction, label coverage and common validation pairs.
+Renumber labels and rebuild matched policy data, encoding caches and split
+snapshots together, preserving source-to-arm label/row mappings. Use the same
+model-seed list and training/tuning protocol across settings; calibrate each
+hybrid on its eligible n1 development data only. Compare validation metrics on
+a common retained subset as well as each setting's full holdout.
+
+Current `data/composite_mapping_merged_v1/` descriptive counts (2026-10-27):
+
+| Cohort | All labels | Labels >1 | Labels =1 | Pairs retained at >1 |
+| --- | ---: | ---: | ---: | ---: |
+| Primary | 2,094 | 741 | 1,353 | 2,872 |
+| Patent-disjoint | 1,555 | 542 | 1,013 | 1,971 |
+
+These are counts from the existing bundle, not completed filtered releases.
+Recompute them after upstream recertification. Popularity filtering is an
+experimental factor, not a repair for failed replay. Each final arm requires
+its own complete replay audit; existing acceptance blockers still apply.
+
+## Planning target population
+
+Evaluate the same full list of cleaned n5 final/root targets in all five
+settings, regardless of reference tactic detection or retained composite
+support. The current export has 9,999 distinct prepared SMILES from 10,000 n5
+route records. Preserve the mapping from each target to all its source routes;
+apply the agreed stereo-free identity policy consistently and report any
+additional identity collapse. Internal n1 motif targets are training inputs,
+not the definition of the n5 planning population.
+
+Report the full-n5 result first. Secondary reference-route strata are: retained
+composite support, detected linear tactics without retained support, and no
+detected linear tactics. Calculate coverage separately for each repertoire,
+with a fixed common-covered subset for direct popularity-arm comparisons.
+Retain route-level annotations where multiple references share one target;
+use any-supported-reference coverage for target-level summaries and report
+mixed reference strata. No detected tactic in a reference route does not
+preclude composite use in an alternative generated route. Also report actual
+composite use, without conditioning the main solve-rate denominator on it.
+Reference-route annotations must never gate model calls or hybrid quotas.
+
 ## Comparison and recommendation budget
 
-Primary proposed arms: B50 (50 single-step proposals) and H40/10 (40 single-step
-plus 10 composite proposals). Freeze the same single-step checkpoint, evaluator,
-stock, target list, and MCTS configuration in both arms. Allocation remains open.
+Compare B50 (50 single-step proposals) with each of the four hybrid settings
+above. H40/10 (40 single-step plus 10 composite proposals) is the proposed common
+hybrid allocation; allocation remains open. Freeze the same single-step
+checkpoint, evaluator, stock, target list, and MCTS configuration across all
+settings. Match search seeds and budgets, and do not retune allocation on n5
+separately for each popularity setting.
 
 The 50 slots count executable variants before reaction application. Failed
 applications consume their slots; do not refill from lower ranks after seeing
@@ -339,44 +469,67 @@ single-step vocabulary and report the overlap subset separately.
 
 ## Cost, validation, and diversity
 
+The primary comparison is primary/pop_gt1 versus B50 on full n5; the other
+cohort/popularity settings provide sensitivity analyses. Both actual model calls
+and end-to-end wall time are required efficiency endpoints. Measure two separate
+success events against each cost axis: any validated stock-reaching route, and
+at least one validated route matching a cleaned n5 source RouteCGR for the target.
+Report matched-budget success/recovery rates and cost/time to first occurrence;
+include failures and timeouts rather than averaging only successful runs.
+See [evaluation specifications](docs/EVALUATION.md) for counting, timing,
+RouteCGR equality, and supplementary SB-CGR metrics.
+
 Count RRS requests, cache hits, actual single-step/composite/value/gating/rollout
 neural forwards, molecules scored, chemistry attempts, generated outcomes,
 unwrapping attempts, and elapsed time by stage. Two heads can cost two neural
 evaluations per decision. Fewer expansions alone do not prove lower model cost.
 Reset molecule-dependent caches consistently between runs.
 
-A candidate macro route counts as solved only after all composites are replayed
-into explicit single-step routes, exact downstream branches reattach, and all
-terminal molecules satisfy the selected stock. Use only n1-derived decomposition
-alternatives. Do not accept approximate lineage projections or generated
-`in_stock=True` flags as validation. Report invalid and inconclusive outcomes,
-including enumeration caps. Decide separately whether non-stock precursors
-exposed during unwrapping should fail or trigger additional charged search.
+Replay composite-bearing solved and unsolved/partial candidates. Validate
+explicit steps, compatible downstream reattachment and every terminal branch.
+An intermediate in stock may terminate its branch early; preserve the full
+original decomposition and validate the shortened route separately. Reusing a
+compatible existing continuation can also recover a previously unsolved route.
+Use only eligible n1-derived decompositions, and count all replay/reconciliation
+costs. Do not accept approximate lineage projections or generated `in_stock=True`
+flags as validation. Keep original search and final validation/solved statuses,
+including invalid/inconclusive outcomes and enumeration caps. Additional search
+to complete non-stock branches remains a separately budgeted protocol decision.
 
 Report validated solve rate and solve-versus-cost curves first. Also report
 unique explicit routes, root disconnections, building-block sets, fixed-method
-route clusters, elementary depth/length, and reference-route recovery. Separate
+route clusters, elementary depth/length, and exact RouteCGR reference recovery.
+Supplement with per-target unique SB-CGR classes, class richness versus cost,
+and overlap/unique classes between baseline and hybrid at matched budgets and
+matched route counts. SB-CGR equality is coarser than exact route recovery. Separate
 search-discovered routes from variants generated by decomposition enumeration.
 Deduplicate atom-map variants and macro/elementary encodings of the same route.
 Use a common ranking method on explicit routes; macro length must not give a
 route an artificial ranking advantage.
 
 Use paired targets and search seeds; report uncertainty at target/patent level.
-Avoid success-only cost averages as the main result. Full n5 and shared-tactic
-cohorts should both be reported under the selected vocabulary protocol.
+Avoid success-only cost averages as the main result. Use full n5 as the primary
+denominator and report reference-coverage strata secondarily. Estimate the
+paired effect of singleton inclusion within each cohort, and patent exclusion
+within each popularity setting. Report vocabulary/pair/coverage losses alongside
+solve-versus-cost and diversity changes; do not compare only each arm's own
+covered subset as if the target populations were identical.
 
 ## Phases
 
 1. Project/environment and tested preparation adapters.
 2. Consume refreshed n1/n5 publications, freeze their identities, and run the
    implemented E1-E3 selector plus the patent-disjoint sensitivity cohort.
-3. Prepare single-step rules, composite supervision, and stock; validate assets.
-4. Train and validate the shared single-step MHN and separate primary/sensitivity
-   composite MHNs; freeze models and calibration.
+3. Prepare single-step rules, composite supervision, and stock; derive the four
+   cohort/popularity datasets with matched within-cohort splits and replay audits.
+4. Train and validate the shared single-step MHN and four composite MHNs per
+   model seed; freeze models and n1-only calibration.
 5. Implement and test the hybrid on the separate SynPlanner branch.
-6. Pilot on development data, freeze budgets, then evaluate paired n5 runs for
-   the primary and patent-disjoint composite models.
-7. Unwrap, validate, deduplicate, measure cost/diversity, and publish the audit.
+6. Pilot on development data, freeze budgets, then evaluate paired full-n5
+   runs for the shared baseline and all four cohort/popularity hybrid settings.
+7. Unwrap solved/unsolved candidates, validate and deduplicate; measure
+   stock-reaching success and exact RouteCGR recovery versus model calls and
+   end-to-end time, then perform supplementary SB-CGR diversity analysis.
 
 The self-contained dataset release, both composite cohorts and all three
 InChI-grouped splits are complete and publicly verified. See

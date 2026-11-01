@@ -1,6 +1,6 @@
 # Questions to resolve
 
-Updated: 2026-10-25. Confirmed choices are in PLAN.md; do not ask them again.
+Updated: 2026-10-28. Confirmed choices are in PLAN.md; do not ask them again.
 
 ## Input choice resolved
 
@@ -33,11 +33,15 @@ are public and verified. See [results](docs/COHORT_RELEASE.md).
    overlap. However, 9,236 of 11,209 rules have no validation examples. Both
    composite splits are now published; review their [coverage](docs/COHORT_RELEASE.md),
    then freeze settings and the model-seed list. Reuse each
-   frozen split across model seeds; composite development data remains n1-only.
+   frozen split across model seeds; derive popularity settings from common
+   within-cohort assignments, without reshuffling. Review the resulting retained
+   holdouts before freezing settings; composite development data remains n1-only.
    See [training details](docs/TRAINING.md).
-3. **Top-50 split and primary cost endpoint?** Initial proposal 40/10; ablations
-   45/5 and 25/25. Choose neural evaluations and/or end-to-end time, with solve
-   rate reported alongside either.
+3. **Top-50 split and evaluation limits?** Initial proposal 40/10; ablations
+   45/5 and 25/25. Freeze numerical call/time limits, budget checkpoints and replay
+   enumeration caps on development data. Both actual neural forwards and
+   end-to-end time (including replay) are required endpoints, with validated
+   solve rate and source RouteCGR recovery reported against each.
 4. **Non-stock components exposed by unwrapping?** Proposed first version:
    invalidate that candidate. A later completion-search variant should charge
    every extra neural call and chemistry operation. Membership is checked
@@ -47,8 +51,38 @@ are public and verified. See [results](docs/COHORT_RELEASE.md).
    vocabulary, or should this be a reported subset/ablation?
 6. **Runtime resources?** Training accelerator, memory, target-level compute
    budgets, and number of model/search seeds determine final configuration.
+7. **Exact RouteCGR order policy?** Proposed primary recovery uses the full ordered
+   history, with order-agnostic equivalence as a separate sensitivity. Freeze
+   handling of interchangeable branch serialization before n5 evaluation; neither
+   net-CGR nor SB-CGR equality is a substitute for full source-route recovery.
+   See [evaluation specifications](docs/EVALUATION.md).
+
+## Residual replay failures
+
+- Determine the treatment of the remaining 124 existing execution/representation
+  failures, including source precursors unsupported by the pinned engine.
+  Normalization/re-extraction is the adopted first repair; no blanket removal
+  of rows, rules or evaluation targets has been authorized.
+- The n1 route 166 primary composite needs upstream recertification for its
+  prepared amidoxime input. Keep it blocked rather than silently substituting
+  a hand-edited rule. Direct replay success does not certify unwrapping.
 
 ## Already settled
+
+- Evaluate model-call efficiency and total inference-pipeline time including
+  tactic replay, validation and deduplication, alongside stock-reaching solve rate
+  and source RouteCGR recovery. SB-CGR diversity is supplementary. Alternative
+  validated routes remain successful even without a source match.
+
+- Handle normalization-only remote tautomer edits with a reaction-aware
+  extraction view, preserving source reaction changes and normalized replay
+  references. Accept only identity-preserving, graph-preserving alignments with
+  successful serialized-rule replay. General disconnected-query grouping remains
+  a separate matcher/serialization issue; it is not changed by this repair.
+
+- All 14 remaining normalization-related failures passed the targeted repair
+  trial, as did the original two. Normalize complete mapped reactions before
+  single-step extraction, and audit every final pair before replacement releases.
 
 - Primary composite exclusions: E1 removes all occurrences from n1 routes with
   an n5 final target; E2 removes occurrences with an n5 root/internal nonterminal
@@ -82,3 +116,30 @@ are public and verified. See [results](docs/COHORT_RELEASE.md).
 
 - Molecule identity checks use Chython-generated stereo-free Standard InChI.
   No RDKit chemistry or depiction is used in the updated investigation.
+
+## Composite vocabulary decision (2026-10-26)
+
+Resolved: merge mapping-equivalent executable queries in both cohorts; retain
+all original certified variants and tactic decompositions. Atom correspondence,
+query constraints and molecule-pattern grouping remain significant. Rebuild
+popularity, policy labels and grouped splits together; retain old-to-new mappings
+and partition-transition audits. This does not change the chosen shared-tactic
+scope, E1-E3 exclusions, or the patent-disjoint sensitivity definition.
+
+## Popularity and target-population decisions (2026-10-27)
+
+Resolved: main composite setting retains popularity >1; the additional setting
+retains all rules with popularity >=1, including singletons. Cross this with
+primary and patent-disjoint cohorts: four hybrids plus one shared single-step
+baseline. Popularity is unique prepared target/merged-rule pairs after exclusions
+and mapping-equivalent merging, computed independently from eligible n1 data in
+each cohort before its holdout. It is not raw occurrence count or train-only
+support; frequency priors remain training-only. Preserve eligible variants and
+decompositions of retained labels. Filtering and matched split derivation remain
+to be implemented; current counts are descriptive, pending recertification.
+
+Plan all n5 final targets, including reference routes with no detected tactics.
+Use reference support as secondary analysis strata, recomputed per repertoire,
+with common-covered targets for direct comparisons. Do not use reference
+annotations to choose targets, invoke the composite head or allocate its quota.
+These decisions do not reopen E1-E3 or change single-step training or union stock.
